@@ -748,9 +748,16 @@ export async function updatePaymentGatewaySettings(data: {
     if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
 
     try {
-        const existing = await prisma.hms_settings.findFirst({
+        let existing = await prisma.hms_settings.findFirst({
             where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
         });
+
+        if (!existing) {
+            existing = await prisma.hms_settings.findFirst({
+                where: { tenant_id: tenantId, key: 'payment_gateway_config' }
+            });
+        }
+
         const existingData = (existing?.value as any) || {};
 
         const configValue = {
@@ -800,13 +807,22 @@ export async function getPaymentMappings() {
     if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
-        const record = await prisma.hms_settings.findFirst({
+        let record = await prisma.hms_settings.findFirst({
             where: {
                 company_id: session.user.companyId,
                 tenant_id: session.user.tenantId,
                 key: 'payment_method_mapping'
             }
         });
+
+        if (!record) {
+            record = await prisma.hms_settings.findFirst({
+                where: {
+                    tenant_id: session.user.tenantId,
+                    key: 'payment_method_mapping'
+                }
+            });
+        }
 
         const mappings = (record?.value as any) || {
             cash: '',
@@ -880,13 +896,22 @@ export async function getWhatsAppSettings() {
     if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
-        const record = await prisma.hms_settings.findFirst({
+        let record = await prisma.hms_settings.findFirst({
             where: {
                 company_id: session.user.companyId,
                 tenant_id: session.user.tenantId,
                 key: 'whatsapp_config'
             }
         });
+
+        if (!record) {
+            record = await prisma.hms_settings.findFirst({
+                where: {
+                    tenant_id: session.user.tenantId,
+                    key: 'whatsapp_config'
+                }
+            });
+        }
 
         const data = (record?.value as any) || {};
 
@@ -895,7 +920,7 @@ export async function getWhatsAppSettings() {
             settings: {
                 enabled: data.enabled ?? false,
                 instanceId: data.instanceId ?? '',
-                hasToken: !!data.token,
+                hasToken: !!(data.token && data.token.length > 0),
                 autoSendBill: data.autoSendBill ?? false,
             }
         };
@@ -924,20 +949,31 @@ export async function updateWhatsAppSettings(data: {
     if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
 
     try {
-        const existing = await prisma.hms_settings.findFirst({
+        // Try to find existing by company specifically first, then fallback to tenant-wide search for this key
+        let existing = await prisma.hms_settings.findFirst({
             where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
         });
+
+        if (!existing) {
+            existing = await prisma.hms_settings.findFirst({
+                where: { tenant_id: tenantId, key: 'whatsapp_config' }
+            });
+        }
+
         const existingData = (existing?.value as any) || {};
+        console.log(`[WHATSAPP SAVE] Existing record found: ${!!existing}, Has Token: ${!!existingData.token}`);
 
         const configValue = {
             enabled: data.enabled,
-            instanceId: data.instanceId.trim(),
+            instanceId: (data.instanceId ?? '').trim(),
             token: (data.token && data.token.trim() !== '')
                 ? data.token.trim()
-                : (existingData.token ?? ''),
+                : (existingData.token || ''),
             autoSendBill: data.autoSendBill,
             lastUpdated: new Date().toISOString()
         };
+
+        console.log(`[WHATSAPP SAVE] Final Token Length: ${configValue.token?.length || 0}`);
 
         await prisma.$transaction([
             prisma.hms_settings.deleteMany({
@@ -979,13 +1015,22 @@ export async function getPDFSettings() {
     if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
-        const record = await prisma.hms_settings.findFirst({
+        let record = await prisma.hms_settings.findFirst({
             where: {
                 company_id: session.user.companyId,
                 tenant_id: session.user.tenantId,
                 key: 'pdf_print_config'
             }
         });
+
+        if (!record) {
+            record = await prisma.hms_settings.findFirst({
+                where: {
+                    tenant_id: session.user.tenantId,
+                    key: 'pdf_print_config'
+                }
+            });
+        }
 
         const data = (record?.value as any) || {};
 
@@ -1024,6 +1069,16 @@ export async function updatePDFSettings(data: {
     if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
 
     try {
+        let existing = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'pdf_print_config' }
+        });
+
+        if (!existing) {
+            existing = await prisma.hms_settings.findFirst({
+                where: { tenant_id: tenantId, key: 'pdf_print_config' }
+            });
+        }
+
         const configValue = {
             ...data,
             lastUpdated: new Date().toISOString()
