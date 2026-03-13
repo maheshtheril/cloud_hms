@@ -545,15 +545,14 @@ export async function createInvoice(data: {
 
             // WhatsApp Notification (Only if paid/posted and auto-send enabled)
             if (status === 'paid' || status === 'posted') {
-                getWhatsAppConfig(companyId, tenantId).then(config => {
+                try {
+                    const config = await getWhatsAppConfig(companyId, tenantId);
                     if (config?.autoSendBill) {
-                        NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId).catch(err => {
-                            console.error(`${LOG_PREFIX} WhatsApp Notification Failed:`, err);
-                        });
+                        await NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId);
                     }
-                }).catch(err => {
-                    console.error(`${LOG_PREFIX} WhatsApp Config Fetch Failed:`, err);
-                });
+                } catch (err) {
+                    console.error(`${LOG_PREFIX} WhatsApp Notification Orchestration Failed:`, err);
+                }
             }
         }
 
@@ -840,15 +839,14 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
 
             // WhatsApp Notification (Only if paid/posted and auto-send enabled)
             if (result.status === 'paid' || result.status === 'posted') {
-                getWhatsAppConfig(companyId, session.user.tenantId!).then(config => {
+                try {
+                    const config = await getWhatsAppConfig(companyId, session.user.tenantId!);
                     if (config?.autoSendBill) {
-                        NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
-                            console.error("WhatsApp Notification Failed:", err);
-                        });
+                        await NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!);
                     }
-                }).catch(err => {
-                    console.error("WhatsApp Config Fetch Failed:", err);
-                });
+                } catch (err) {
+                    console.error("WhatsApp Notification Orchestration Failed:", err);
+                }
             }
         }
 
@@ -1033,10 +1031,10 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             try {
                 const wsConfig = await getWhatsAppConfig(session.user.companyId!, session.user.tenantId!);
                 if (wsConfig?.autoSendBill) {
-                    NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!).catch(console.error);
+                    await NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!);
                 }
             } catch (err) {
-                console.error("[Billing-AutoSend] Failed to resolve auto-send config:", err);
+                console.error("[Billing-AutoSend] WhatsApp Notification Orchestration Failed:", err);
             }
         }
 
@@ -1134,7 +1132,11 @@ export async function settlePatientDues(patientId: string, amount: number, metho
 
                 // Trigger Auto-send if enabled and invoice is now finalized (paid or posted)
                 if ((res.status === 'paid' || res.status === 'posted') && autoSendConfig?.autoSendBill) {
-                    NotificationService.sendInvoiceWhatsapp(res.invoiceId, session.user.tenantId!).catch(console.error);
+                    try {
+                        await NotificationService.sendInvoiceWhatsapp(res.invoiceId, session.user.tenantId!);
+                    } catch (err) {
+                        console.error(`Failed to send WhatsApp for settled invoice ${res.invoiceId}:`, err);
+                    }
                 }
             } catch (err: any) {
                 console.error(`Failed to post accounting/notification for settled invoice ${res.invoiceId}:`, err);

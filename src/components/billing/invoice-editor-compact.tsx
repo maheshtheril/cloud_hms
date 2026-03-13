@@ -679,9 +679,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         // WORLD CLASS: Auto-Print Trigger (Trigger on Paid or Posted settlement)
         if ((effectiveStatus === 'paid' || effectiveStatus === 'posted') && pdfConfig?.autoPrint && invoiceId) {
-          setTimeout(() => {
-            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
-          }, 100);
+          // Trigger IMMEDIATELY to bypass popup blockers (most browsers allow window.open if it's "close enough" to the click)
+          window.open(`/hms/billing/${invoiceId}/print`, '_blank');
         }
 
         // [WORLD CLASS STABILITY] Delay the parent callback to allow success screen to mount first
@@ -1005,7 +1004,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   if ((res as any).success) {
                     toast({ title: "WhatsApp Sent", description: "Receipt shared with patient." });
                   } else {
-                    toast({ title: "WhatsApp Failed", description: (res as any).error || "System error", variant: "destructive" });
+                    const error = (res as any).error || "System error";
+                    const isUltraMsgStopped = error.toLowerCase().includes("instance stopped") || error.toLowerCase().includes("non-payment");
+                    
+                    toast({ 
+                      title: "WhatsApp Failed", 
+                      description: isUltraMsgStopped ? "Your WhatsApp service (UltraMsg) is stopped. Please check your billing/subscription." : error, 
+                      variant: "destructive" 
+                    });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
