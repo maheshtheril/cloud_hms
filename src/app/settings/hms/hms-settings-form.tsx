@@ -42,6 +42,7 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
     const [pdfHospitalNameSize, setPdfHospitalNameSize] = useState(pdfSettings?.hospitalNameSize || 16)
     const [pdfAddressSize, setPdfAddressSize] = useState(pdfSettings?.addressSize || 10)
     const [pdfShowContactInfo, setPdfShowContactInfo] = useState(pdfSettings?.showContactInfo ?? true)
+    const [pdfAutoPrint, setPdfAutoPrint] = useState(pdfSettings?.autoPrint ?? false)
 
     // Sync local state when settings props change
     useEffect(() => {
@@ -79,6 +80,7 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
             setPdfHospitalNameSize(pdfSettings.hospitalNameSize || 16);
             setPdfAddressSize(pdfSettings.addressSize || 10);
             setPdfShowContactInfo(pdfSettings.showContactInfo ?? true);
+            setPdfAutoPrint(pdfSettings.autoPrint ?? false);
         }
     }, [pdfSettings]);
 
@@ -120,7 +122,8 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
                     showLogo: pdfShowLogo,
                     hospitalNameSize: pdfHospitalNameSize,
                     addressSize: pdfAddressSize,
-                    showContactInfo: pdfShowContactInfo
+                    showContactInfo: pdfShowContactInfo,
+                    autoPrint: pdfAutoPrint
                 })
             ]);
 
@@ -300,11 +303,20 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
                     <div className={`space-y-4 ${!whatsappEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
                         <input type="text" value={whatsappInstanceId} onChange={(e) => setWhatsappInstanceId(e.target.value)} placeholder="Instance ID" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" />
                         <div className="relative">
-                            <input type={showWhatsappToken ? 'text' : 'password'} value={whatsappToken} onChange={(e) => setWhatsappToken(e.target.value)} placeholder={hasExistingWhatsappToken ? '••••••••••••••••' : 'API Token'} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" />
-                            <button type="button" onClick={() => setShowWhatsappToken(!showWhatsappToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <input 
+                                type={showWhatsappToken ? 'text' : 'password'} 
+                                value={whatsappToken} 
+                                onChange={(e) => setWhatsappToken(e.target.value)} 
+                                placeholder={(hasExistingWhatsappToken && !showWhatsappToken) ? '••••••••••••••••' : 'API Token'} 
+                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" 
+                            />
+                            <button type="button" onClick={() => setShowWhatsappToken(!showWhatsappToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors">
                                 {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
+                        {hasExistingWhatsappToken && !whatsappToken && !showWhatsappToken && (
+                            <p className="text-[9px] text-slate-400 italic">Token is securely encrypted. Type to update.</p>
+                        )}
                         <label className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl cursor-pointer">
                             <input type="checkbox" checked={whatsappAutoSendBill} onChange={(e) => setWhatsappAutoSendBill(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 italic">Auto-send Bill PDFs</span>
@@ -349,6 +361,10 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
                             <label className="flex items-center gap-3 text-xs font-bold italic text-slate-700 dark:text-slate-300 cursor-pointer">
                                 <input type="checkbox" checked={pdfShowContactInfo} onChange={(e) => setPdfShowContactInfo(e.target.checked)} className="h-4 w-4 accent-indigo-600" />
                                 Show Contact Details
+                            </label>
+                            <label className="flex items-center gap-3 text-xs font-bold italic text-slate-700 dark:text-slate-300 cursor-pointer">
+                                <input type="checkbox" checked={pdfAutoPrint} onChange={(e) => setPdfAutoPrint(e.target.checked)} className="h-4 w-4 accent-indigo-600" />
+                                Auto-print Bill after Save
                             </label>
                         </div>
                     </div>

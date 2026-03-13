@@ -332,9 +332,25 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">API Token {hasExistingWhatsappToken && !whatsappToken && "✓"}</Label>
                             <div className="relative">
-                                <Input type={showWhatsappToken ? 'text' : 'password'} value={whatsappToken} onChange={e => setWhatsappToken(e.target.value)} placeholder={hasExistingWhatsappToken ? '••••••••••••••••' : 'Enter UltraMsg Token'} className="font-mono text-sm rounded-xl pr-10" />
-                                <button type="button" onClick={() => setShowWhatsappToken(!showWhatsappToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 underline italic text-[10px]">show</button>
+                                <Input 
+                                    type={showWhatsappToken ? 'text' : 'password'} 
+                                    value={whatsappToken} 
+                                    onChange={e => setWhatsappToken(e.target.value)} 
+                                    placeholder={(hasExistingWhatsappToken && !showWhatsappToken) ? '••••••••••••••••' : 'Enter UltraMsg Token'} 
+                                    className="font-mono text-sm rounded-xl pr-10" 
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowWhatsappToken(!showWhatsappToken)} 
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                                    title={showWhatsappToken ? "Hide Token" : "Show Token"}
+                                >
+                                    {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
                             </div>
+                            {hasExistingWhatsappToken && !whatsappToken && !showWhatsappToken && (
+                                <p className="text-[9px] text-slate-400 italic">Saved token is hidden for security. Type to overwrite.</p>
+                            )}
                         </div>
                     </div>
 
