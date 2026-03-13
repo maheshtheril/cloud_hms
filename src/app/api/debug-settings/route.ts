@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 export async function GET() {
+    const session = await auth();
     try {
         const allSettings = await prisma.hms_settings.findMany({
             where: { key: 'whatsapp_config' }
@@ -17,7 +19,16 @@ export async function GET() {
             is_active: s.is_active
         }));
 
-        return NextResponse.json({ success: true, count: allSettings.length, data });
+        return NextResponse.json({ 
+            success: true, 
+            session: {
+                tenantId: session?.user?.tenantId,
+                companyId: session?.user?.companyId,
+                userId: session?.user?.id
+            },
+            count: allSettings.length, 
+            data 
+        });
     } catch (e: any) {
         return NextResponse.json({ success: false, error: e.message });
     }
