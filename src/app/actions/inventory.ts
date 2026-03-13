@@ -464,6 +464,77 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
     }
 }
 
+export async function findOrCreateUOM(name: string): Promise<string> {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return "";
+
+    const cleanName = name.trim().toUpperCase() || "PCS";
+    
+    try {
+        // 1. Search existing
+        const existing = await prisma.hms_uom.findFirst({
+            where: {
+                company_id: session.user.companyId,
+                name: { equals: cleanName, mode: 'insensitive' }
+            }
+        });
+
+        if (existing) return existing.id;
+
+        // 2. Create Category if missing
+        let catName = `${cleanName} Category`;
+        let category = await prisma.hms_uom_category.findFirst({
+            where: { company_id: session.user.companyId, name: catName }
+        });
+
+        if (!category) {
+            category = await prisma.hms_uom_category.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    name: catName
+                }
+            });
+        }
+
+        // 3. Create UOM
+        const newUom = await prisma.hms_uom.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId,
+                category_id: category.id,
+                name: cleanName,
+                uom_type: 'reference',
+                ratio: 1,
+                rounding: 0.01,
+                is_active: true
+            }
+        });
+
+        return newUom.id;
+    } catch (error) {
+        console.error("findOrCreateUOM Error:", error);
+        return "";
+    }
+}
+
+export async function findOrCreateUOMsBatch(names: string[]): Promise<Map<string, string>> {
+    const results = new Map<string, string>();
+    const uniqueNames = Array.from(new Set(names.filter(Boolean).map(n => n.trim().toUpperCase())));
+    
+    // Process sequentially to avoid race conditions on category creation for now, 
+    // or we could optimize with more complex logic. Given the small number of lines, 
+    // sequential is safer and usually fast enough for a single scan.
+    for (const name of uniqueNames) {
+        const id = await findOrCreateUOM(name);
+        if (id) results.set(name, id);
+    }
+    
+    return results;
+}
+
 export async function updateUOM(prevState: any, formData: FormData): Promise<{ error?: string, success?: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };

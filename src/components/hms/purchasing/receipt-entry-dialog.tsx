@@ -16,7 +16,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
-import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct, findOrCreateProductsBatch } from "@/app/actions/inventory";
+import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct, findOrCreateProductsBatch, getUOMs, findOrCreateUOMsBatch } from "@/app/actions/inventory";
 import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getPurchaseReceipt, updatePurchaseReceipt } from "@/app/actions/receipt";
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
@@ -68,7 +68,6 @@ interface ReceiptEntryDialogProps {
 }
 
 const TAX_OPTIONS = [0, 5, 12, 18, 28];
-const COMMON_UOMS = ['PCS', 'STRIP', 'BOX', 'PACK', 'TAB', 'CAP', 'VIAL', 'AMP', 'BOTTLE', 'TRAY', 'TUBE', 'BAG', 'NOS', 'KIT', 'ROLL', 'SET'];
 
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }: ReceiptEntryDialogProps) {
     const { toast } = useToast();
@@ -99,6 +98,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     const [roundOff, setRoundOff] = useState(0);
     const [isAutoRound, setIsAutoRound] = useState(true);
     const [scannedTotal, setScannedTotal] = useState(0);
+    const [uomMaster, setUomMaster] = useState<{ id: string, name: string }[]>([]);
 
     // AI Scanning State
     const [isScanning, setIsScanning] = useState(false);
@@ -119,7 +119,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             const details = await getCompanyDetails();
             if (details) setCompanyDetails(details as any);
         }
+        async function loadUoms() {
+            const res = await getUOMs();
+            if (res) setUomMaster(res);
+        }
         loadCompany();
+        loadUoms();
     }, [isOpen]);
 
     // Determine Tax Type
@@ -517,6 +522,13 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         });
                     }
 
+                    // 1.1 Batch resolve UOMs
+                    const uomNames = scannedItems.map(i => i.uom).filter(Boolean);
+                    const uomIdMap = await findOrCreateUOMsBatch(uomNames as string[]);
+                    // Refresh Master data to include newly created UOMs
+                    const freshUoms = await getUOMs();
+                    if (freshUoms) setUomMaster(freshUoms);
+
                     // 2. Map scanned items to UI state
                     const mapped = scannedItems.map((item: any) => {
                         try {
@@ -544,7 +556,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 taxRate: rate,
                                 hsn: item.hsn || "",
                                 packing: item.packing || "",
-                                uom: item.uom || "",
+                                uom: item.uom ? item.uom.trim().toUpperCase() : "PCS",
                                 conversionFactor: 1,
                                 schemeDiscount: Number(item.schemeDiscount) || 0,
                                 discountPct: Number(item.discountPct) || 0,
@@ -1162,8 +1174,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent className="min-w-[100px]">
-                                                        {COMMON_UOMS.map(uom => (
-                                                            <SelectItem key={uom} value={uom} className="text-[10px] font-bold">{uom}</SelectItem>
+                                                        {uomMaster.map(uom => (
+                                                            <SelectItem key={uom.id} value={uom.name} className="text-[10px] font-bold">{uom.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
