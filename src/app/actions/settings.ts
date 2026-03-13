@@ -752,7 +752,7 @@ export async function updatePaymentGatewaySettings(data: {
         });
         const existingData = (existing?.value as any) || {};
 
-        const configValue = JSON.stringify({
+        const configValue = {
             enabled: data.enabled,
             provider: 'razorpay',
             keyId: data.keyId,
@@ -762,21 +762,32 @@ export async function updatePaymentGatewaySettings(data: {
             upiVpa: data.upiVpa,
             businessName: data.businessName,
             lastUpdated: new Date().toISOString()
-        });
+        };
 
-        await prisma.hms_settings.deleteMany({
-            where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
+        await prisma.hms_settings.upsert({
+            where: {
+                tenant_id_company_id_key: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    key: 'payment_gateway_config'
+                }
+            },
+            update: {
+                value: configValue,
+                updated_at: new Date(),
+                updated_by: userId
+            },
+            create: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                key: 'payment_gateway_config',
+                value: configValue,
+                scope: 'company',
+                is_active: true,
+                created_by: userId,
+                updated_by: userId
+            }
         });
-
-        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
-        await prisma.$executeRaw`
-            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
-            VALUES (
-                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
-                'payment_gateway_config', ${configValue}::jsonb,
-                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
-            )
-        `;
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
@@ -918,7 +929,7 @@ export async function updateWhatsAppSettings(data: {
         });
         const existingData = (existing?.value as any) || {};
 
-        const configValue = JSON.stringify({
+        const configValue = {
             enabled: data.enabled,
             instanceId: data.instanceId.trim(),
             token: (data.token && data.token.trim() !== '')
@@ -926,21 +937,32 @@ export async function updateWhatsAppSettings(data: {
                 : (existingData.token ?? ''),
             autoSendBill: data.autoSendBill,
             lastUpdated: new Date().toISOString()
-        });
+        };
 
-        await prisma.hms_settings.deleteMany({
-            where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
+        await prisma.hms_settings.upsert({
+            where: {
+                tenant_id_company_id_key: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    key: 'whatsapp_config'
+                }
+            },
+            update: {
+                value: configValue,
+                updated_at: new Date(),
+                updated_by: userId
+            },
+            create: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                key: 'whatsapp_config',
+                value: configValue,
+                scope: 'company',
+                is_active: true,
+                created_by: userId,
+                updated_by: userId
+            }
         });
-
-        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
-        await prisma.$executeRaw`
-            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
-            VALUES (
-                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
-                'whatsapp_config', ${configValue}::jsonb,
-                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
-            )
-        `;
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
@@ -1008,24 +1030,35 @@ export async function updatePDFSettings(data: {
     if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
 
     try {
-        const configValue = JSON.stringify({
+        const configValue = {
             ...data,
             lastUpdated: new Date().toISOString()
-        });
+        };
 
-        await prisma.hms_settings.deleteMany({
-            where: { company_id: companyId, tenant_id: tenantId, key: 'pdf_print_config' }
+        await prisma.hms_settings.upsert({
+            where: {
+                tenant_id_company_id_key: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    key: 'pdf_print_config'
+                }
+            },
+            update: {
+                value: configValue,
+                updated_at: new Date(),
+                updated_by: userId
+            },
+            create: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                key: 'pdf_print_config',
+                value: configValue,
+                scope: 'company',
+                is_active: true,
+                created_by: userId,
+                updated_by: userId
+            }
         });
-
-        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
-        await prisma.$executeRaw`
-            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
-            VALUES (
-                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
-                'pdf_print_config', ${configValue}::jsonb,
-                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
-            )
-        `;
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
