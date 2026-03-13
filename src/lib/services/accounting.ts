@@ -1662,6 +1662,31 @@ export class AccountingService {
             });
             const openingBalance = obLines.reduce((sum, line) => sum + (Number(line.debit || 0) - Number(line.credit || 0)), 0);
 
+            // 2.5 Calculate Opening Balance PER ACCOUNT
+            const accountSummaries: Record<string, { id: string, name: string, code: string, opening: number, debit: number, credit: number, closing: number }> = {};
+            
+            // Initialize summaries
+            const accounts = await prisma.accounts.findMany({
+                where: { id: { in: finalAccountIds } }
+            });
+            accounts.forEach(acc => {
+                accountSummaries[acc.id] = {
+                    id: acc.id,
+                    name: acc.name,
+                    code: acc.code || '',
+                    opening: 0,
+                    debit: 0,
+                    credit: 0,
+                    closing: 0
+                };
+            });
+
+            obLines.forEach(line => {
+                if (accountSummaries[line.account_id]) {
+                    accountSummaries[line.account_id].opening += (Number(line.debit || 0) - Number(line.credit || 0));
+                }
+            });
+
             // 3. Fetch entries for the range
             const entries = await (prisma.journal_entries.findMany as any)({
                 where: {
@@ -1687,7 +1712,28 @@ export class AccountingService {
                 orderBy: { date: 'asc' }
             });
 
-            return { success: true, data: entries, openingBalance, accountIds: finalAccountIds };
+            // 4. Calculate Debit/Credit PER ACCOUNT from entries
+            entries.forEach((e: any) => {
+                e.journal_entry_lines.forEach((l: any) => {
+                    if (accountSummaries[l.account_id]) {
+                        accountSummaries[l.account_id].debit += Number(l.debit || 0);
+                        accountSummaries[l.account_id].credit += Number(l.credit || 0);
+                    }
+                });
+            });
+
+            // 5. Finalize Closing Balances
+            Object.values(accountSummaries).forEach(s => {
+                s.closing = s.opening + s.debit - s.credit;
+            });
+
+            return { 
+                success: true, 
+                data: entries, 
+                openingBalance, 
+                accountIds: finalAccountIds,
+                accountSummaries: Object.values(accountSummaries)
+            };
         } catch (error: any) {
             console.error(`${type.toUpperCase()}book Error:`, error);
             return { success: false, error: error.message, data: [], openingBalance: 0 };

@@ -41,6 +41,7 @@ export function DetailedLedgerReport({
     // Multi-account support
     const [availableAccounts, setAvailableAccounts] = useState<any[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null) // null = All
+    const [accountSummaries, setAccountSummaries] = useState<any[]>([])
 
     useEffect(() => {
         if (type !== 'daybook') {
@@ -76,6 +77,7 @@ export function DetailedLedgerReport({
                 setEntries(result.data || [])
                 setOpeningBalance(result.openingBalance || 0)
                 setBookAccountIds(result.accountIds || [])
+                setAccountSummaries(result.accountSummaries || [])
             }
 
 
@@ -173,7 +175,7 @@ export function DetailedLedgerReport({
 
         // If it's a multi-account book register (multiple IDs in bookAccountIds), 
         // prepend the primary target account name for this specific entry for clarity
-        if (bookLines.length === 1) {
+        if (bookLines.length === 1 && bookAccountIds.length > 1) {
             particulars = `${bookLines[0].accounts.name.toUpperCase()}: ${particulars}`
         }
 
@@ -233,25 +235,28 @@ export function DetailedLedgerReport({
                                     <span className="uppercase">ALL {type === 'cashbook' ? 'CASH' : 'BANK'} ACCOUNTS</span>
                                 </button>
                                 
-                                {availableAccounts.map(acc => (
-                                    <button
-                                        key={acc.id}
-                                        onClick={() => setSelectedAccountId(acc.id)}
-                                        className={`w-full h-auto min-h-[32px] py-2 flex flex-col items-start px-3 text-[10px] font-bold border transition-all ${
-                                            selectedAccountId === acc.id 
-                                                ? 'bg-[#64ffff] text-black border-[#64ffff]' 
-                                                : 'text-[#ffffcc] bg-[#002b2b] border-[#004d4d] hover:bg-[#003333]'
-                                        }`}
-                                    >
-                                        <div className="flex items-center justify-between w-full mb-0.5">
-                                            <span className="opacity-50 text-[8px]">{acc.code}</span>
-                                            {selectedAccountId === acc.id && (
-                                                <div className="h-1.5 w-1.5 rounded-full bg-black animate-pulse" />
-                                            )}
-                                        </div>
-                                        <span className="uppercase text-left leading-tight">{acc.name}</span>
-                                    </button>
-                                ))}
+                                {availableAccounts.map(acc => {
+                                    const summary = accountSummaries.find(s => s.id === acc.id);
+                                    return (
+                                        <button
+                                            key={acc.id}
+                                            onClick={() => setSelectedAccountId(acc.id)}
+                                            className={`w-full h-auto min-h-[32px] py-2 flex flex-col items-start px-3 text-[10px] font-bold border transition-all ${
+                                                selectedAccountId === acc.id 
+                                                    ? 'bg-[#64ffff] text-black border-[#64ffff]' 
+                                                    : 'text-[#ffffcc] bg-[#002b2b] border-[#004d4d] hover:bg-[#003333]'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between w-full mb-0.5">
+                                                <span className="opacity-50 text-[8px]">{acc.code}</span>
+                                                <span className="text-[8px] text-[#64ffff]">
+                                                    {summary ? formatCurrency(summary.closing) : '...'}
+                                                </span>
+                                            </div>
+                                            <span className="uppercase text-left leading-tight">{acc.name}</span>
+                                        </button>
+                                    );
+                                })}
 
                                 {availableAccounts.length === 0 && !loading && (
                                     <div className="py-10 px-4 text-center">
@@ -326,9 +331,49 @@ export function DetailedLedgerReport({
                     </div>
 
                 <div className="flex-1 overflow-auto">
-                    {type !== 'daybook' && bookAccountIds.length > 0 && (
+                    {type !== 'daybook' && selectedAccountId === null && accountSummaries.length > 1 && (
+                        <div className="p-4 bg-[#002b2b]/60 border-b border-[#006666]">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-[10px] font-black text-[#64ffff] uppercase tracking-widest">Bank Account Wise Summary</span>
+                                <div className="h-px flex-1 bg-[#004d4d]" />
+                            </div>
+                            <table className="w-full text-[10px] border-collapse">
+                                <thead>
+                                    <tr className="text-[#64ffff] text-left border-b border-[#004d4d]">
+                                        <th className="pb-1 font-black">ACCOUNT NAME</th>
+                                        <th className="pb-1 font-black text-right">OPENING</th>
+                                        <th className="pb-1 font-black text-right">DEBIT (IN)</th>
+                                        <th className="pb-1 font-black text-right">CREDIT (OUT)</th>
+                                        <th className="pb-1 font-black text-right">CLOSING</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {accountSummaries.map(s => (
+                                        <tr key={s.id} className="border-b border-[#003333]/30 hover:bg-[#003333]/50 transition-colors cursor-pointer" onClick={() => setSelectedAccountId(s.id)}>
+                                            <td className="py-1.5 font-bold text-[#ffffcc]">{s.name.toUpperCase()}</td>
+                                            <td className="py-1.5 text-right opacity-80">{s.opening.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td className="py-1.5 text-right text-emerald-400 font-bold">{s.debit > 0 ? s.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}</td>
+                                            <td className="py-1.5 text-right text-rose-400 font-bold">{s.credit > 0 ? s.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}</td>
+                                            <td className="py-1.5 text-right font-black text-[#64ffff]">{s.closing.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="font-black border-t border-[#008080]">
+                                        <td className="pt-2 text-[#64ffff]">GRAND TOTAL</td>
+                                        <td className="pt-2 text-right">{accountSummaries.reduce((a, b) => a + b.opening, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                        <td className="pt-2 text-right">{accountSummaries.reduce((a, b) => a + b.debit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                        <td className="pt-2 text-right">{accountSummaries.reduce((a, b) => a + b.credit, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                        <td className="pt-2 text-right text-[#64ffff]">{accountSummaries.reduce((a, b) => a + b.closing, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+
+                    {type !== 'daybook' && bookAccountIds.length > 0 && selectedAccountId !== null && (
                         <div className="px-4 py-2 bg-[#003333]/50 border-b border-[#004d4d] flex items-center gap-3">
-                            <span className="text-[8px] font-black text-[#64ffff] uppercase whitespace-nowrap">Targeted Accounts:</span>
+                            <span className="text-[8px] font-black text-[#64ffff] uppercase whitespace-nowrap">Selected Account Identity:</span>
                             <div className="flex flex-wrap gap-2">
                                 {entries.length > 0 && Array.from(new Set(entries.flatMap(e => e.journal_entry_lines.filter((l: any) => bookAccountIds.includes(l.account_id)).map((l: any) => l.accounts.name)))).map((name: any) => (
                                     <span key={name} className="px-1.5 py-0.5 bg-[#004d4d] rounded text-[9px] font-bold text-[#ffffcc]">{name.toUpperCase()}</span>
