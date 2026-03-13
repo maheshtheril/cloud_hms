@@ -274,7 +274,7 @@ export async function ensureCrmMenus() {
     try {
         const items = [
             { key: 'crm-intelligence', label: 'Intelligence', url: '/crm/intelligence', icon: 'Brain', sort: 5 },
-            { key: 'crm-dashboard', label: 'Dashboard', url: '/crm/dashboard', icon: 'LayoutDashboard', sort: 10 },
+            { key: 'crm-dashboard', label: 'CRM Overview', url: '/crm/dashboard', icon: 'LayoutDashboard', sort: 10 },
             { key: 'crm-leads', label: 'Leads', url: '/crm/leads', icon: 'Users', sort: 20 },
             { key: 'crm-deals', label: 'Deals Pipeline', url: '/crm/deals', icon: 'DollarSign', sort: 30 },
             { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 50 },
@@ -483,7 +483,7 @@ export async function ensureCrmMenus() {
 export async function ensureHmsMenus() {
     try {
         const hmsItems = [
-            { key: 'hms-dashboard', label: 'Dashboard', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10, permission: 'hms:admin' },
+            { key: 'hms-dashboard', label: 'Command Center', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10, permission: 'hms:admin' },
             { key: 'hms-analytics', label: 'Analytics & Trends', url: '/hms/analytics', icon: 'BarChart3', sort: 11, permission: 'hms:admin' },
             { key: 'hms-reception', label: 'Reception', url: '/hms/reception/dashboard', icon: 'MonitorCheck', sort: 12, permission: 'hms:dashboard:reception' },
             { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20, permission: 'patients:view' },
