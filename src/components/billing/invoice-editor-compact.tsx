@@ -43,18 +43,18 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 }) {
 
   const getUomOptions = (itemType: string, currentUom: string) => {
-    // Standard sets
-    const serviceUnits = ['SERVICE', 'UNIT', 'VISIT', 'HOUR', 'DAY'];
-    const stockUnits = ['PCS', 'STRIP', 'BOX', 'VIAL', 'ML', 'TABLET', 'CAPSULE'];
-
-    // Combine with DB units
+    // Enforce world standard: only use UOMs from the database master table
     const dbUnitNames = uoms.map(u => u.name.toUpperCase());
-    const allUnits = Array.from(new Set([...serviceUnits, ...stockUnits, ...dbUnitNames, (currentUom || '').toUpperCase()]));
+    
+    // Always include the current UOM so existing/legacy lines don't break visually
+    const allUnits = Array.from(new Set([...dbUnitNames, (currentUom || '').toUpperCase()])).filter(Boolean);
 
     if (itemType === 'service') {
-      return allUnits.filter(u => serviceUnits.includes(u) || (u === currentUom?.toUpperCase()) || (uoms.find(du => du.name.toUpperCase() === u && du.uom_type === 'service')));
+      // For services, only show service-type UOMs or the currently selected one
+      return allUnits.filter(u => (u === currentUom?.toUpperCase()) || (uoms.find(du => du.name.toUpperCase() === u && du.uom_type === 'service')));
     }
-    return allUnits.filter(u => stockUnits.includes(u) || (u === currentUom?.toUpperCase()) || dbUnitNames.includes(u));
+    // For items/products, show all UOMs or the currently selected one
+    return allUnits.filter(u => (u === currentUom?.toUpperCase()) || dbUnitNames.includes(u));
   }
 
   interface Payment {
