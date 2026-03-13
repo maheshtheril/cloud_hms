@@ -764,30 +764,23 @@ export async function updatePaymentGatewaySettings(data: {
             lastUpdated: new Date().toISOString()
         };
 
-        await prisma.hms_settings.upsert({
-            where: {
-                tenant_id_company_id_key: {
+        await prisma.$transaction([
+            prisma.hms_settings.deleteMany({
+                where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
+            }),
+            prisma.hms_settings.create({
+                data: {
                     tenant_id: tenantId,
                     company_id: companyId,
-                    key: 'payment_gateway_config'
+                    key: 'payment_gateway_config',
+                    value: configValue,
+                    scope: 'company',
+                    is_active: true,
+                    created_by: userId,
+                    updated_by: userId
                 }
-            },
-            update: {
-                value: configValue,
-                updated_at: new Date(),
-                updated_by: userId
-            },
-            create: {
-                tenant_id: tenantId,
-                company_id: companyId,
-                key: 'payment_gateway_config',
-                value: configValue,
-                scope: 'company',
-                is_active: true,
-                created_by: userId,
-                updated_by: userId
-            }
-        });
+            })
+        ]);
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
@@ -939,30 +932,23 @@ export async function updateWhatsAppSettings(data: {
             lastUpdated: new Date().toISOString()
         };
 
-        await prisma.hms_settings.upsert({
-            where: {
-                tenant_id_company_id_key: {
+        await prisma.$transaction([
+            prisma.hms_settings.deleteMany({
+                where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
+            }),
+            prisma.hms_settings.create({
+                data: {
                     tenant_id: tenantId,
                     company_id: companyId,
-                    key: 'whatsapp_config'
+                    key: 'whatsapp_config',
+                    value: configValue,
+                    scope: 'company',
+                    is_active: true,
+                    created_by: userId,
+                    updated_by: userId
                 }
-            },
-            update: {
-                value: configValue,
-                updated_at: new Date(),
-                updated_by: userId
-            },
-            create: {
-                tenant_id: tenantId,
-                company_id: companyId,
-                key: 'whatsapp_config',
-                value: configValue,
-                scope: 'company',
-                is_active: true,
-                created_by: userId,
-                updated_by: userId
-            }
-        });
+            })
+        ]);
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
@@ -1035,30 +1021,23 @@ export async function updatePDFSettings(data: {
             lastUpdated: new Date().toISOString()
         };
 
-        await prisma.hms_settings.upsert({
-            where: {
-                tenant_id_company_id_key: {
+        await prisma.$transaction([
+            prisma.hms_settings.deleteMany({
+                where: { company_id: companyId, tenant_id: tenantId, key: 'pdf_print_config' }
+            }),
+            prisma.hms_settings.create({
+                data: {
                     tenant_id: tenantId,
                     company_id: companyId,
-                    key: 'pdf_print_config'
+                    key: 'pdf_print_config',
+                    value: configValue,
+                    scope: 'company',
+                    is_active: true,
+                    created_by: userId,
+                    updated_by: userId
                 }
-            },
-            update: {
-                value: configValue,
-                updated_at: new Date(),
-                updated_by: userId
-            },
-            create: {
-                tenant_id: tenantId,
-                company_id: companyId,
-                key: 'pdf_print_config',
-                value: configValue,
-                scope: 'company',
-                is_active: true,
-                created_by: userId,
-                updated_by: userId
-            }
-        });
+            })
+        ]);
 
         revalidatePath('/settings/hms');
         revalidatePath('/settings/global');
