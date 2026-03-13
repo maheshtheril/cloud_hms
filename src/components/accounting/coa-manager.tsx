@@ -427,7 +427,6 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
                             <select
                                 value={formData.parent_id}
                                 onChange={e => handleParentChange(e.target.value)}
-                                disabled={!!editingAccount}
                                 className="flex-1 bg-[#002b2b] border-none text-[11px] text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-1 outline-none appearance-none font-bold"
                             >
                                 <option value="none">Primary / Root</option>
