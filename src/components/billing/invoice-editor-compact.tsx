@@ -1033,8 +1033,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Financial Cycle Closed • Identity Node Deselected</p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
 
       {/* WORLD CLASS BATCH SELECTION NODE */}
       <BatchSelectorDialog
