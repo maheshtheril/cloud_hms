@@ -185,10 +185,10 @@ export class AccountingService {
                         // Cash: 1001 (New), 1110 (Group), 1000 (Legacy)
                         // Bank: 1050 (New), 1120 (Group), 1100 (Legacy)
                         const cashAccount = await prisma.accounts.findFirst({ 
-                            where: { company_id: invoice.company_id, code: { in: ['1001', '1110', '1000'] } } 
+                            where: { company_id: invoice.company_id, code: { in: ['1001', '1110'] } } 
                         });
                         const bankAccount = await prisma.accounts.findFirst({ 
-                            where: { company_id: invoice.company_id, code: { in: ['1050', '1120', '1100'] } } 
+                            where: { company_id: invoice.company_id, code: { in: ['1050', '1120'] } } 
                         });
                         debitAccount = (paymentMethod === 'cash') ? cashAccount : bankAccount;
                     }
@@ -325,15 +325,15 @@ export class AccountingService {
 
             if (!moneyAccountId) {
                 const cashAccount = await prisma.accounts.findFirst({
-                    where: { company_id: payment.company_id, code: '1000' }
+                    where: { company_id: payment.company_id, code: '1001' }
                 }) || await prisma.accounts.create({
-                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Cash on Hand', code: '1000', type: 'Asset', is_active: true }
+                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Cash on Hand', code: '1001', type: 'Asset', is_active: true }
                 });
 
                 const bankAccount = await prisma.accounts.findFirst({
-                    where: { company_id: payment.company_id, code: '1100' }
+                    where: { company_id: payment.company_id, code: '1050' }
                 }) || await prisma.accounts.create({
-                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
+                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account - Primary', code: '1050', type: 'Asset', is_active: true }
                 });
                 moneyAccountId = (paymentMethod === 'cash') ? cashAccount.id : bankAccount.id;
             }
@@ -1595,7 +1595,7 @@ export class AccountingService {
         end.setHours(23, 59, 59, 999);
 
         // Define account ranges/codes based on standard COA (including legacy fallback)
-        const codes = type === 'cash' ? ['1001', '1110', '1000'] : ['1050', '1120', '1100'];
+        const codes = type === 'cash' ? ['1001', '1110'] : ['1050', '1120'];
 
         try {
             // 1. Find the target accounts for this company by codes AND by name

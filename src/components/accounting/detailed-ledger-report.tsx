@@ -128,6 +128,7 @@ export function DetailedLedgerReport({
         const credit = bookLines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0)
 
         let particulars = 'MULTIPLE ACCOUNTS'
+        
         if (contraLines.length === 1) {
             particulars = contraLines[0].accounts.name.toUpperCase()
         } else if (contraLines.length > 1) {
@@ -136,11 +137,22 @@ export function DetailedLedgerReport({
                 (Number(b.debit) + Number(b.credit)) - (Number(a.debit) + Number(a.credit))
             )
             particulars = sorted[0].accounts.name.toUpperCase() + ' (AS PER DETAILS)'
+        } else if (bookLines.length > 1) {
+            // INTERNAL TRANSFER: All lines are book accounts
+            // Pick the line with the opposite movement to the main book movement
+            const mainMovementIsDebit = debit > 0
+            const oppositeLines = bookLines.filter((l: any) => mainMovementIsDebit ? Number(l.credit) > 0 : Number(l.debit) > 0)
+            if (oppositeLines.length > 0) {
+                particulars = oppositeLines[0].accounts.name.toUpperCase()
+            } else {
+                 particulars = 'INTERNAL TRANSFER'
+            }
         } else if (e.journal_entry_lines.length > 0) {
             particulars = e.journal_entry_lines[0].accounts.name.toUpperCase()
         }
 
-        // If it's a multi-account book register, prepend the target account name for clarity
+        // If it's a multi-account book register (multiple IDs in bookAccountIds), 
+        // prepend the primary target account name for this specific entry for clarity
         if (bookLines.length === 1) {
             particulars = `${bookLines[0].accounts.name.toUpperCase()}: ${particulars}`
         }
