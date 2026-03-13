@@ -1587,8 +1587,9 @@ export class AccountingService {
     /**
      * Fetches Cashbook or Bankbook entries.
      * @param type - 'cash' | 'bank'
+     * @param specificAccountIds - Optional list of specific account IDs to filter by
      */
-    static async getCashBankBook(companyId: string, type: 'cash' | 'bank', startDate: Date = new Date(), endDate?: Date) {
+    static async getCashBankBook(companyId: string, type: 'cash' | 'bank', startDate: Date = new Date(), endDate?: Date, specificAccountIds?: string[]) {
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
         const end = new Date(endDate || startDate);
@@ -1644,11 +1645,18 @@ export class AccountingService {
 
             if (accountIds.length === 0) return { success: true, data: [], openingBalance: 0 };
 
+            // 1.5 Filter by specific account IDs if provided
+            const finalAccountIds = specificAccountIds && specificAccountIds.length > 0
+                ? accountIds.filter(id => specificAccountIds.includes(id))
+                : accountIds;
+
+            if (finalAccountIds.length === 0) return { success: true, data: [], openingBalance: 0 };
+
             // 2. Calculate Opening Balance (Cumulative net flow before start of day)
             const obLines = await prisma.journal_entry_lines.findMany({
                 where: {
                     company_id: companyId,
-                    account_id: { in: accountIds },
+                    account_id: { in: finalAccountIds },
                     journal_entries: { date: { lt: start }, posted: true }
                 }
             });
@@ -1661,18 +1669,25 @@ export class AccountingService {
                     date: { gte: start, lte: end },
                     posted: true,
                     journal_entry_lines: {
-                        some: { account_id: { in: accountIds } }
+                        some: { account_id: { in: finalAccountIds } }
                     }
                 },
                 include: {
                     journal_entry_lines: {
+                        where: {
+                            OR: [
+                                { account_id: { in: finalAccountIds } },
+                                { debit: { gt: 0 } },
+                                { credit: { gt: 0 } }
+                            ]
+                        },
                         include: { accounts: true }
                     }
                 },
                 orderBy: { date: 'asc' }
             });
 
-            return { success: true, data: entries, openingBalance, accountIds };
+            return { success: true, data: entries, openingBalance, accountIds: finalAccountIds };
         } catch (error: any) {
             console.error(`${type.toUpperCase()}book Error:`, error);
             return { success: false, error: error.message, data: [], openingBalance: 0 };
@@ -1698,5 +1713,53 @@ export class AccountingService {
         });
 
         return specificAr?.id || defaultArId;
+    }
+
+    /**
+     * Returns all accounts that qualify as 'cash' or 'bank' for a company.
+     */
+    static async getCategoryAccounts(companyId: string, type: 'cash' | 'bank') {
+        const codes = type === 'cash' ? ['1610', '1600'] : ['1710', '1700'];
+        
+        try {
+            const rootAccounts = await prisma.accounts.findMany({
+                where: {
+                    company_id: companyId,
+                    OR: [
+                        { code: { in: codes } },
+                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            const allAccounts: any[] = [];
+            const processedIds = new Set<string>();
+
+            const collectDescendants = async (acc: any) => {
+                if (processedIds.has(acc.id)) return;
+                processedIds.add(acc.id);
+                if (!acc.is_group) {
+                    allAccounts.push(acc);
+                }
+                
+                if (acc.is_group) {
+                    const children = await prisma.accounts.findMany({
+                        where: { parent_id: acc.id }
+                    });
+                    for (const child of children) {
+                        await collectDescendants(child);
+                    }
+                }
+            };
+
+            for (const acc of rootAccounts) {
+                await collectDescendants(acc);
+            }
+
+            return { success: true, data: allAccounts };
+        } catch (error: any) {
+            console.error("Error fetching category accounts:", error);
+            return { success: false, error: error.message };
+        }
     }
 }

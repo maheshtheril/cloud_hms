@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { getDaybook, getCashBankBook } from "@/app/actions/accounting/reports"
+import { getDaybook, getCashBankBook, getCategoryAccounts } from "@/app/actions/accounting/reports"
 import { ZionaLogo } from '@/components/branding/ziona-logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import React from 'react'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface DetailedLedgerProps {
     type: 'daybook' | 'cashbook' | 'bankbook'
@@ -36,10 +37,24 @@ export function DetailedLedgerReport({
     const [bookAccountIds, setBookAccountIds] = useState<string[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set())
+    
+    // Multi-account support
+    const [availableAccounts, setAvailableAccounts] = useState<any[]>([])
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null) // null = All
+
+    useEffect(() => {
+        if (type !== 'daybook') {
+            getCategoryAccounts(type === 'cashbook' ? 'cash' : 'bank').then(res => {
+                if (res.success) {
+                    setAvailableAccounts(res.data || [])
+                }
+            })
+        }
+    }, [type])
 
     useEffect(() => {
         loadData()
-    }, [date, startDate, endDate, type])
+    }, [date, startDate, endDate, type, selectedAccountId])
 
     async function loadData() {
         setLoading(true)
@@ -48,7 +63,12 @@ export function DetailedLedgerReport({
             if (type === 'daybook') {
                 res = await getDaybook(date)
             } else {
-                res = await getCashBankBook(type === 'cashbook' ? 'cash' : 'bank', startDate, endDate)
+                res = await getCashBankBook(
+                    type === 'cashbook' ? 'cash' : 'bank', 
+                    startDate, 
+                    endDate, 
+                    selectedAccountId ? [selectedAccountId] : undefined
+                )
             }
 
             if (res.success) {
@@ -194,6 +214,62 @@ export function DetailedLedgerReport({
 
             {/* Content Container */}
             <div className="flex-1 flex gap-1 p-1 overflow-hidden">
+                {/* Account Selection Sidebar (No-Print) */}
+                {type !== 'daybook' && (
+                    <div className="w-56 bg-[#003333] border border-[#006666] flex flex-col no-print shrink-0">
+                        <div className="h-10 bg-[#004d4d] flex items-center px-4 border-b border-[#006666]">
+                            <span className="text-[10px] font-black text-[#64ffff] uppercase">SELECT ACCOUNT</span>
+                        </div>
+                        <ScrollArea className="flex-1">
+                            <div className="p-1 space-y-1">
+                                <button
+                                    onClick={() => setSelectedAccountId(null)}
+                                    className={`w-full h-8 flex items-center px-3 text-[10px] font-bold border transition-all ${
+                                        selectedAccountId === null 
+                                            ? 'bg-[#64ffff] text-black border-[#64ffff]' 
+                                            : 'text-[#ffffcc] bg-[#002b2b] border-[#004d4d] hover:bg-[#003333]'
+                                    }`}
+                                >
+                                    <span className="uppercase">ALL {type === 'cashbook' ? 'CASH' : 'BANK'} ACCOUNTS</span>
+                                </button>
+                                
+                                {availableAccounts.map(acc => (
+                                    <button
+                                        key={acc.id}
+                                        onClick={() => setSelectedAccountId(acc.id)}
+                                        className={`w-full h-auto min-h-[32px] py-2 flex flex-col items-start px-3 text-[10px] font-bold border transition-all ${
+                                            selectedAccountId === acc.id 
+                                                ? 'bg-[#64ffff] text-black border-[#64ffff]' 
+                                                : 'text-[#ffffcc] bg-[#002b2b] border-[#004d4d] hover:bg-[#003333]'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between w-full mb-0.5">
+                                            <span className="opacity-50 text-[8px]">{acc.code}</span>
+                                            {selectedAccountId === acc.id && (
+                                                <div className="h-1.5 w-1.5 rounded-full bg-black animate-pulse" />
+                                            )}
+                                        </div>
+                                        <span className="uppercase text-left leading-tight">{acc.name}</span>
+                                    </button>
+                                ))}
+
+                                {availableAccounts.length === 0 && !loading && (
+                                    <div className="py-10 px-4 text-center">
+                                        <p className="text-[9px] text-[#64ffff] opacity-30 uppercase italic">No individual accounts detected</p>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                        
+                        <div className="p-2 border-t border-[#006666] bg-[#002b2b]">
+                            <div className="flex items-center gap-2 text-[#64ffff] opacity-50">
+                                <Filter className="h-3 w-3" />
+                                <span className="text-[8px] font-black uppercase">Quick Filter</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Main Ledger Area */}
                 <div className="flex-1 bg-[#004d4d] border border-[#006666] flex flex-col overflow-hidden">
                     <div className="h-10 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080] no-print">

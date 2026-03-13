@@ -45,9 +45,16 @@ export async function getDaybook(date: Date) {
     return await AccountingService.getDaybook(session.user.companyId, date)
 }
 
-export async function getCashBankBook(type: 'cash' | 'bank', startDate: Date, endDate?: Date) {
+export async function getCashBankBook(type: 'cash' | 'bank', startDate: Date, endDate?: Date, accountIds?: string[]) {
     const session = await auth()
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
 
-    return await AccountingService.getCashBankBook(session.user.companyId, type, startDate, endDate)
+    return await AccountingService.getCashBankBook(session.user.companyId, type, startDate, endDate, accountIds)
+}
+
+export async function getCategoryAccounts(type: 'cash' | 'bank') {
+    const session = await auth()
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
+
+    return await AccountingService.getCategoryAccounts(session.user.companyId, type)
 }
