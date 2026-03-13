@@ -1099,8 +1099,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         </div>
       )}
 
-      {/* Wrapper Div Start */}
-      <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
+      {/* FIXED MODAL OVERLAY */}
+      <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300 no-print" onClick={() => onClose ? onClose() : router.back()}>
+        <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[2xl] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
 
         {/* ✕ ALWAYS-VISIBLE CLOSE BUTTON */}
         <button
@@ -2094,6 +2095,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </>
   );
