@@ -45,9 +45,9 @@ export async function getDaybook(date: Date) {
     return await AccountingService.getDaybook(session.user.companyId, date)
 }
 
-export async function getCashBankBook(type: 'cash' | 'bank', date: Date) {
+export async function getCashBankBook(type: 'cash' | 'bank', startDate: Date, endDate?: Date) {
     const session = await auth()
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
 
-    return await AccountingService.getCashBankBook(session.user.companyId, type, date)
+    return await AccountingService.getCashBankBook(session.user.companyId, type, startDate, endDate)
 }

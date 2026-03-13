@@ -29,14 +29,17 @@ export function DetailedLedgerReport({
 }: DetailedLedgerProps) {
     const [loading, setLoading] = useState(true)
     const [date, setDate] = useState(new Date())
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1)) // 1st of current month
+    const [endDate, setEndDate] = useState(new Date())
     const [entries, setEntries] = useState<any[]>([])
     const [openingBalance, setOpeningBalance] = useState(0)
+    const [bookAccountIds, setBookAccountIds] = useState<string[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         loadData()
-    }, [date, type])
+    }, [date, startDate, endDate, type])
 
     async function loadData() {
         setLoading(true)
@@ -45,13 +48,14 @@ export function DetailedLedgerReport({
             if (type === 'daybook') {
                 res = await getDaybook(date)
             } else {
-                res = await getCashBankBook(type === 'cashbook' ? 'cash' : 'bank', date)
+                res = await getCashBankBook(type === 'cashbook' ? 'cash' : 'bank', startDate, endDate)
             }
 
             if (res.success) {
                 const result = res as any
                 setEntries(result.data || [])
                 setOpeningBalance(result.openingBalance || 0)
+                setBookAccountIds(result.accountIds || [])
             }
 
 
@@ -83,16 +87,66 @@ export function DetailedLedgerReport({
         )
     )
 
-    // Calculate totals for the day's entries
+    // Calculate totals based on book type
     const totalDebit = entries.reduce((sum, e) => {
-        return sum + e.journal_entry_lines.reduce((lSum: number, l: any) => lSum + Number(l.debit || 0), 0)
+        if (type === 'daybook') {
+            return sum + e.journal_entry_lines.reduce((lSum: number, l: any) => lSum + Number(l.debit || 0), 0)
+        }
+        // For Ledger Books, only sum lines belonging to the target accounts
+        return sum + e.journal_entry_lines
+            .filter((l: any) => bookAccountIds.includes(l.account_id))
+            .reduce((lSum: number, l: any) => lSum + Number(l.debit || 0), 0)
     }, 0)
 
     const totalCredit = entries.reduce((sum, e) => {
-        return sum + e.journal_entry_lines.reduce((lSum: number, l: any) => lSum + Number(l.credit || 0), 0)
+        if (type === 'daybook') {
+            return sum + e.journal_entry_lines.reduce((lSum: number, l: any) => lSum + Number(l.credit || 0), 0)
+        }
+        // For Ledger Books, only sum lines belonging to the target accounts
+        return sum + e.journal_entry_lines
+            .filter((l: any) => bookAccountIds.includes(l.account_id))
+            .reduce((lSum: number, l: any) => lSum + Number(l.credit || 0), 0)
     }, 0)
 
     const closingBalance = openingBalance + totalDebit - totalCredit
+
+    // Helper to determine movement and particulars for a specific entry in a ledger book
+    const getMovementAndParticulars = (e: any) => {
+        if (type === 'daybook') {
+            return {
+                particulars: e.journal_entry_lines[0]?.description?.toUpperCase() || 'NO NARRATION',
+                debit: e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0),
+                credit: e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0)
+            }
+        }
+
+        // Logic for Ledger Books (Cash/Bank)
+        const bookLines = e.journal_entry_lines.filter((l: any) => bookAccountIds.includes(l.account_id))
+        const contraLines = e.journal_entry_lines.filter((l: any) => !bookAccountIds.includes(l.account_id))
+
+        const debit = bookLines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0)
+        const credit = bookLines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0)
+
+        let particulars = 'MULTIPLE ACCOUNTS'
+        if (contraLines.length === 1) {
+            particulars = contraLines[0].accounts.name.toUpperCase()
+        } else if (contraLines.length > 1) {
+            // Pick the line with the largest opposite movement if available
+            const sorted = [...contraLines].sort((a, b) => 
+                (Number(b.debit) + Number(b.credit)) - (Number(a.debit) + Number(a.credit))
+            )
+            particulars = sorted[0].accounts.name.toUpperCase() + ' (AS PER DETAILS)'
+        } else if (e.journal_entry_lines.length > 0) {
+            particulars = e.journal_entry_lines[0].accounts.name.toUpperCase()
+        }
+
+        // If it's a multi-account book register, prepend the target account name for clarity
+        if (bookLines.length === 1) {
+            particulars = `${bookLines[0].accounts.name.toUpperCase()}: ${particulars}`
+        }
+
+        return { particulars, debit, credit }
+    }
 
     const titleMap = {
         daybook: 'Daily Transaction Register (Daybook)',
@@ -133,15 +187,38 @@ export function DetailedLedgerReport({
                     <div className="h-10 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080] no-print">
                         <div className="flex items-center gap-6">
                             <span className="text-[12px] font-black">LEDGER REGISTER</span>
-                            <div className="flex items-center bg-[#002b2b] border border-[#008080] px-2 rounded">
-                                <Calendar className="h-3 w-3 text-[#64ffff] mr-2" />
-                                <input
-                                    type="date"
-                                    value={format(date, 'yyyy-MM-dd')}
-                                    onChange={(e) => setDate(new Date(e.target.value))}
-                                    className="bg-transparent border-none text-[10px] h-6 focus:ring-0 text-[#ffffcc]"
-                                />
-                            </div>
+                            {type === 'daybook' ? (
+                                <div className="flex items-center bg-[#002b2b] border border-[#008080] px-2 rounded">
+                                    <Calendar className="h-3 w-3 text-[#64ffff] mr-2" />
+                                    <input
+                                        type="date"
+                                        value={format(date, 'yyyy-MM-dd')}
+                                        onChange={(e) => setDate(new Date(e.target.value))}
+                                        className="bg-transparent border-none text-[10px] h-6 focus:ring-0 text-[#ffffcc]"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center bg-[#002b2b] border border-[#008080] px-2 rounded">
+                                        <span className="text-[8px] opacity-50 mr-2">FROM</span>
+                                        <input
+                                            type="date"
+                                            value={format(startDate, 'yyyy-MM-dd')}
+                                            onChange={(e) => setStartDate(new Date(e.target.value))}
+                                            className="bg-transparent border-none text-[10px] h-6 focus:ring-0 text-[#ffffcc]"
+                                        />
+                                    </div>
+                                    <div className="flex items-center bg-[#002b2b] border border-[#008080] px-2 rounded">
+                                        <span className="text-[8px] opacity-50 mr-2">TO</span>
+                                        <input
+                                            type="date"
+                                            value={format(endDate, 'yyyy-MM-dd')}
+                                            onChange={(e) => setEndDate(new Date(e.target.value))}
+                                            className="bg-transparent border-none text-[10px] h-6 focus:ring-0 text-[#ffffcc]"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="relative group">
@@ -160,8 +237,19 @@ export function DetailedLedgerReport({
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-auto">
-                        <table className="w-full text-left text-[11px] border-collapse">
+                <div className="flex-1 overflow-auto">
+                    {type !== 'daybook' && bookAccountIds.length > 0 && (
+                        <div className="px-4 py-2 bg-[#003333]/50 border-b border-[#004d4d] flex items-center gap-3">
+                            <span className="text-[8px] font-black text-[#64ffff] uppercase whitespace-nowrap">Targeted Accounts:</span>
+                            <div className="flex flex-wrap gap-2">
+                                {entries.length > 0 && Array.from(new Set(entries.flatMap(e => e.journal_entry_lines.filter((l: any) => bookAccountIds.includes(l.account_id)).map((l: any) => l.accounts.name)))).map((name: any) => (
+                                    <span key={name} className="px-1.5 py-0.5 bg-[#004d4d] rounded text-[9px] font-bold text-[#ffffcc]">{name.toUpperCase()}</span>
+                                ))}
+                                {entries.length === 0 && <span className="text-[9px] opacity-50 italic">Synchronizing identities...</span>}
+                            </div>
+                        </div>
+                    )}
+                    <table className="w-full text-left text-[11px] border-collapse">
                             <thead className="sticky top-0 bg-[#006666] z-10 shadow-md">
                                 <tr className="text-[9px] font-black uppercase text-[#64ffff] border-b border-[#008080]">
                                     <th className="px-4 py-2 w-32">Vch No.</th>
@@ -190,27 +278,29 @@ export function DetailedLedgerReport({
                                     <tr>
                                         <td colSpan={5} className="py-20 text-center opacity-30 uppercase tracking-[0.3em]">No Transactions Found</td>
                                     </tr>
-                                ) : filteredEntries.map((e) => (
-                                    <React.Fragment key={e.id}>
-                                        <tr
-                                            className="hover:bg-[#002b2b] transition-colors cursor-pointer group"
-                                            onClick={() => toggleExpand(e.id)}
-                                        >
-                                            <td className="px-4 py-2 font-bold text-[#64ffff]">{e.ref}</td>
-                                            <td className="px-4 py-2 opacity-80">{format(new Date(e.created_at || e.date), 'dd-MMM-yy').toUpperCase()}</td>
-                                            <td className="px-4 py-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-black text-[#ffffcc]">{e.journal_entry_lines[0]?.description?.toUpperCase() || 'NO NARRATION'}</span>
-                                                    <span className="text-[8px] opacity-40 group-hover:opacity-100 uppercase tracking-widest">{e.journal_entry_lines.length} LINES</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-2 text-right font-black">
-                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-4 py-2 text-right font-black">
-                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                            </td>
-                                        </tr>
+                                ) : filteredEntries.map((e) => {
+                                    const movement = getMovementAndParticulars(e)
+                                    return (
+                                        <React.Fragment key={e.id}>
+                                            <tr
+                                                className="hover:bg-[#002b2b] transition-colors cursor-pointer group"
+                                                onClick={() => toggleExpand(e.id)}
+                                            >
+                                                <td className="px-4 py-2 font-bold text-[#64ffff]">{e.ref}</td>
+                                                <td className="px-4 py-2 opacity-80">{format(new Date(e.created_at || e.date), 'dd-MMM-yy').toUpperCase()}</td>
+                                                <td className="px-4 py-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-black text-[#ffffcc]">{movement.particulars}</span>
+                                                        <span className="text-[8px] opacity-40 group-hover:opacity-100 uppercase tracking-widest">{e.journal_entry_lines.length} LINES</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2 text-right font-black">
+                                                    {movement.debit > 0 ? movement.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                                                </td>
+                                                <td className="px-4 py-2 text-right font-black">
+                                                    {movement.credit > 0 ? movement.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                                                </td>
+                                            </tr>
                                         <AnimatePresence>
                                             {(expandedEntries.has(e.id) || (typeof window !== 'undefined' && window.matchMedia('print').matches)) && (
                                                 <tr className="bg-[#002b2b]/60 border-y border-[#006666]">
@@ -238,7 +328,8 @@ export function DetailedLedgerReport({
                                             )}
                                         </AnimatePresence>
                                     </React.Fragment>
-                                ))}
+                                )
+                            })}
                             </tbody>
                             <tfoot className="bg-[#003333] border-t-2 border-[#008080] font-black">
                                 <tr>

@@ -181,9 +181,15 @@ export class AccountingService {
                     }
 
                     if (!debitAccount) {
-                        // Fallback to defaults
-                        const cashAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1000' } }); // Cash
-                        const bankAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1100' } }); // Bank
+                        // Fallback to defaults using the Tally-Standardized COA codes (including legacy fallbacks)
+                        // Cash: 1001 (New), 1110 (Group), 1000 (Legacy)
+                        // Bank: 1050 (New), 1120 (Group), 1100 (Legacy)
+                        const cashAccount = await prisma.accounts.findFirst({ 
+                            where: { company_id: invoice.company_id, code: { in: ['1001', '1110', '1000'] } } 
+                        });
+                        const bankAccount = await prisma.accounts.findFirst({ 
+                            where: { company_id: invoice.company_id, code: { in: ['1050', '1120', '1100'] } } 
+                        });
                         debitAccount = (paymentMethod === 'cash') ? cashAccount : bankAccount;
                     }
 
@@ -1582,22 +1588,59 @@ export class AccountingService {
      * Fetches Cashbook or Bankbook entries.
      * @param type - 'cash' | 'bank'
      */
-    static async getCashBankBook(companyId: string, type: 'cash' | 'bank', date: Date = new Date()) {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
+    static async getCashBankBook(companyId: string, type: 'cash' | 'bank', startDate: Date = new Date(), endDate?: Date) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate || startDate);
+        end.setHours(23, 59, 59, 999);
 
-        // Define account ranges/codes based on standard COA
-        // Cash: 1000, 1010 | Bank: 1100 (Standard), 1050 (Legacy)
-        const codes = type === 'cash' ? ['1000', '1010'] : ['1100', '1050'];
+        // Define account ranges/codes based on standard COA (including legacy fallback)
+        const codes = type === 'cash' ? ['1001', '1110', '1000'] : ['1050', '1120', '1100'];
 
         try {
-            // 1. Find the target accounts for this company
-            const targetAccounts = await prisma.accounts.findMany({
-                where: { company_id: companyId, code: { in: codes } }
+            // 1. Find the target accounts for this company by codes AND by name
+            const startAccounts = await prisma.accounts.findMany({
+                where: { 
+                    company_id: companyId,
+                    OR: [
+                        { code: { in: codes } },
+                        { name: { contains: type === 'cash' ? 'Cash' : 'Bank', mode: 'insensitive' } }
+                    ]
+                }
             });
-            const accountIds = targetAccounts.map(a => a.id);
+
+            // If we found groups, we need to include all their descendants (recursively or at least deep)
+            const allTargetAccountIds = new Set<string>();
+            const processAccount = async (acc: any, depth = 0) => {
+                if (depth > 3) return; // Prevent infinite loops
+                allTargetAccountIds.add(acc.id);
+                if (acc.is_group) {
+                    const children = await prisma.accounts.findMany({
+                        where: { parent_id: acc.id }
+                    });
+                    for (const child of children) {
+                        await processAccount(child, depth + 1);
+                    }
+                }
+            };
+
+            for (const acc of startAccounts) {
+                await processAccount(acc);
+            }
+
+            const accountIds = Array.from(allTargetAccountIds);
+
+            if (accountIds.length === 0) {
+                // Last ditch: if still nothing, try to find any Asset account that might be a bank
+                const assets = await prisma.accounts.findMany({
+                    where: { company_id: companyId, type: 'Asset', is_group: false },
+                    take: 5
+                });
+                if (assets.length > 0) {
+                    // We don't add them all, but it shows we tried. 
+                    // Better to return empty than wrong data, but name check above should usually work.
+                }
+            }
 
             if (accountIds.length === 0) return { success: true, data: [], openingBalance: 0 };
 
@@ -1606,16 +1649,16 @@ export class AccountingService {
                 where: {
                     company_id: companyId,
                     account_id: { in: accountIds },
-                    journal_entries: { date: { lt: startOfDay }, posted: true }
+                    journal_entries: { date: { lt: start }, posted: true }
                 }
             });
             const openingBalance = obLines.reduce((sum, line) => sum + (Number(line.debit || 0) - Number(line.credit || 0)), 0);
 
-            // 3. Fetch entries for the day
+            // 3. Fetch entries for the range
             const entries = await (prisma.journal_entries.findMany as any)({
                 where: {
                     company_id: companyId,
-                    date: { gte: startOfDay, lte: endOfDay },
+                    date: { gte: start, lte: end },
                     posted: true,
                     journal_entry_lines: {
                         some: { account_id: { in: accountIds } }
@@ -1629,7 +1672,7 @@ export class AccountingService {
                 orderBy: { date: 'asc' }
             });
 
-            return { success: true, data: entries, openingBalance };
+            return { success: true, data: entries, openingBalance, accountIds };
         } catch (error: any) {
             console.error(`${type.toUpperCase()}book Error:`, error);
             return { success: false, error: error.message, data: [], openingBalance: 0 };
