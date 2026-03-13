@@ -19,7 +19,8 @@ export default function NewPurchaseReceiptPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950/50 backdrop-blur-3xl flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-emerald-500/10" />
             <ReceiptEntryDialog
                 isOpen={isOpen}
                 onClose={handleClose}
