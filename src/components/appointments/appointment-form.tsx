@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
+import { getCurrentCompany } from "@/app/actions/company"
 import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog";
 import { getPatientById } from "@/app/actions/patient-v10"
@@ -89,6 +90,14 @@ export function AppointmentForm({
     const [regInvoice, setRegInvoice] = useState<any>(null);
     const [isCheckingRegInvoice, setIsCheckingRegInvoice] = useState(false);
     const [isGeneratingReg, setIsGeneratingReg] = useState(false);
+    const [companyInfo, setCompanyInfo] = useState<any>(null); // [HOSPITAL INFO] from global settings
+
+    // [FETCH COMPANY INFO] for OP Slip letterhead
+    useEffect(() => {
+        getCurrentCompany().then(res => {
+            if (res) setCompanyInfo(res);
+        }).catch(() => {});
+    }, []);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -518,27 +527,42 @@ export function AppointmentForm({
                                 };
                                 const patientName = `${appt.patient?.first_name || ''} ${appt.patient?.last_name || ''}`;
                                 const doctorName = `Dr. ${appt.clinician?.first_name || ''} ${appt.clinician?.last_name || ''}`;
-                                const date = new Date(appt.start_time || appt.starts_at).toLocaleDateString();
+                                const date = new Date(appt.start_time || appt.starts_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
                                 const time = new Date(appt.start_time || appt.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                const tokenNumber = appt.id.split('-')[0].toUpperCase();
+                                // 3-digit numeric token (001-999) derived from appointment UUID
+                                const tokenRaw = parseInt(appt.id.replace(/-/g, '').slice(0, 8), 16) % 999 + 1;
+                                const tokenNumber = String(tokenRaw).padStart(3, '0');
+                                const logo = companyInfo?.logo_url || '';
+                                const hospName = companyInfo?.name || '';
+                                const hospAddress = (companyInfo?.metadata as any)?.address || '';
+                                const hospPhone = (companyInfo?.metadata as any)?.phone || '';
                                 printHtml(`<!DOCTYPE html><html><head><title>OP Slip - ${patientName}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 2cm; }
-  @media print { @page { margin: 0; size: A4; } body { padding: 2cm; } }
-  .slip { border: 2px solid #000; border-radius: 10px; overflow: hidden; }
+  body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 1.5cm; }
+  @media print { @page { margin: 0; size: A4; } body { padding: 1.5cm; } }
+  .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
+  .header img { height: 64px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+  .header h1 { font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; }
+  .header p { font-size: 12px; color: #4a5568; margin-top: 3px; }
+  .slip { border: 2px solid #000; border-radius: 8px; overflow: hidden; }
   .slip-top { display: flex; align-items: stretch; border-bottom: 2px solid #000; }
-  .patient-block { flex: 1; padding: 20px 24px; border-right: 2px solid #000; }
-  .token-block { width: 160px; padding: 20px 24px; text-align: center; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .lbl { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #718096; display: block; margin-bottom: 4px; }
+  .patient-block { flex: 1; padding: 16px 20px; border-right: 2px solid #000; }
+  .token-block { width: 140px; padding: 16px 20px; text-align: center; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .lbl { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #718096; display: block; margin-bottom: 3px; }
   .val-lg { font-size: 20px; font-weight: 900; color: #1a202c; line-height: 1.1; }
-  .val-sm { font-size: 13px; font-weight: 700; color: #4a5568; margin-top: 4px; }
-  .token-num { font-size: 26px; font-weight: 900; color: #1a202c; letter-spacing: -1px; }
+  .val-sm { font-size: 12px; font-weight: 700; color: #4a5568; margin-top: 3px; }
+  .token-num { font-size: 38px; font-weight: 900; color: #1a202c; letter-spacing: -2px; line-height: 1; }
   .slip-bottom { display: grid; grid-template-columns: 1fr 1fr; }
-  .info-cell { padding: 16px 24px; }
+  .info-cell { padding: 14px 20px; }
   .info-cell:first-child { border-right: 2px solid #000; }
-  .val-md { font-size: 16px; font-weight: 900; color: #1a202c; }
+  .val-md { font-size: 15px; font-weight: 900; color: #1a202c; }
 </style></head><body>
+<div class="header">
+  ${logo ? `<img src="${logo}" />` : ''}
+  <h1>${hospName}</h1>
+  ${hospAddress ? `<p>${hospAddress}${hospPhone ? ' | ' + hospPhone : ''}</p>` : ''}
+</div>
 <div class="slip">
   <div class="slip-top">
     <div class="patient-block">
@@ -547,8 +571,8 @@ export function AppointmentForm({
       <div class="val-sm">ID: ${appt.patient?.patient_number || 'N/A'}&nbsp;&nbsp;|&nbsp;&nbsp;${appt.patient?.gender || ''}</div>
     </div>
     <div class="token-block">
-      <span class="lbl">OP Token</span>
-      <div class="token-num">#${tokenNumber}</div>
+      <span class="lbl">Token</span>
+      <div class="token-num">${tokenNumber}</div>
     </div>
   </div>
   <div class="slip-bottom">
