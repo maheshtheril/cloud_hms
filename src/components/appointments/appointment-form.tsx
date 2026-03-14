@@ -523,27 +523,21 @@ export function AppointmentForm({
                                 const tokenNumber = appt.id.split('-')[0].toUpperCase();
                                 printHtml(`<!DOCTYPE html><html><head><title>OP Slip - ${patientName}</title>
 <style>
-  body { font-family: Arial, sans-serif; line-height: 1.4; padding: 1.5cm; color: #1a202c; background: white; }
+  body { font-family: Arial, sans-serif; line-height: 1.5; padding: 1.5cm; color: #1a202c; background: white; }
   @media print { @page { margin: 0; size: A4; } body { margin: 0; padding: 1.5cm; } }
-  .header { text-align: center; margin-bottom: 1cm; border-bottom: 3px solid #000; padding-bottom: 10px; }
-  .header h1 { margin: 0; font-size: 26px; font-weight: 900; text-transform: uppercase; }
-  .header p { margin: 4px 0 0; font-size: 12px; color: #4a5568; }
-  .header img { height: 60px; margin-bottom: 10px; display:block; margin-left:auto; margin-right:auto; }
-  .ticket-info { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; background: #f7fafc; padding: 15px; border-radius: 8px; }
-  .token-box { background: #000; color: white; padding: 10px 20px; border-radius: 6px; text-align: center; }
-  .token-label { font-size: 10px; font-weight: 900; color: #cbd5e0; text-transform: uppercase; display: block; }
-  .token-value { font-size: 24px; font-weight: 900; }
-  .section-title { font-size: 11px; font-weight: 900; text-transform: uppercase; color: white; background: #2d3748; padding: 4px 10px; display: inline-block; margin-bottom: 10px; border-radius: 4px; }
-  .lbl { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; display: block; }
-  .val { font-weight: 900; font-size: 15px; margin-bottom: 4px; }
-  .info-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-bottom: 30px; }
-  .inner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-  .vitals-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; border: 2px solid #edf2f7; padding: 15px; border-radius: 12px; margin-bottom: 30px; }
-  .vital-box { border-right: 1px solid #edf2f7; padding-right: 10px; }
-  .vital-box:last-child { border: none; }
-  .vital-input { border-bottom: 1px dashed #cbd5e0; height: 25px; margin-top: 5px; }
-  .clinical-container { border: 2px solid #2d3748; border-radius: 12px; min-height: 16cm; padding: 20px; }
-  .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 10px; }
+  .header { text-align: center; margin-bottom: 1.5cm; border-bottom: 3px solid #000; padding-bottom: 14px; }
+  .header h1 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; }
+  .header p { margin: 6px 0 0; font-size: 13px; color: #4a5568; }
+  .header img { height: 70px; margin-bottom: 12px; display:block; margin-left:auto; margin-right:auto; }
+  .ticket-info { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; background: #f7fafc; padding: 18px; border-radius: 10px; }
+  .token-box { background: #000; color: white; padding: 12px 24px; border-radius: 8px; text-align: center; }
+  .token-label { font-size: 10px; font-weight: 900; color: #cbd5e0; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .token-value { font-size: 28px; font-weight: 900; }
+  .lbl { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; display: block; margin-bottom: 2px; }
+  .val { font-weight: 900; font-size: 17px; }
+  .meta { font-size: 12px; font-weight: 700; color: #4a5568; margin-top: 4px; }
+  .info-row { display: flex; gap: 40px; margin-top: 20px; }
+  .info-cell { flex: 1; }
 </style></head><body>
 <div class="header">
   ${hospitalInfo?.logo_url ? `<img src="${hospitalInfo.logo_url}" />` : ''}
@@ -554,37 +548,24 @@ export function AppointmentForm({
   <div>
     <span class="lbl">Patient Name &amp; ID</span>
     <div class="val">${patientName}</div>
-    <div style="font-size:12px;font-weight:700;">ID: ${appt.patient?.patient_number || 'N/A'} | ${appt.patient?.gender || ''}</div>
+    <div class="meta">ID: ${appt.patient?.patient_number || 'N/A'} | ${appt.patient?.gender || ''}</div>
   </div>
   <div class="token-box">
     <span class="token-label">OP TOKEN</span>
     <div class="token-value">#${tokenNumber}</div>
   </div>
 </div>
-<div class="info-grid">
-  <div>
-    <span class="section-title">Encounter Details</span>
-    <div class="inner-grid">
-      <div><span class="lbl">Consulting With</span><div class="val">${doctorName}</div><div style="font-size:10px;font-weight:bold;">${appt.clinician?.role || 'Clinician'}</div></div>
-      <div><span class="lbl">Date &amp; Time</span><div class="val">${date}</div><div style="font-size:10px;font-weight:bold;">${time}</div></div>
-    </div>
+<div class="info-row">
+  <div class="info-cell">
+    <span class="lbl">Consulting Doctor</span>
+    <div class="val">${doctorName}</div>
   </div>
-  <div>
-    <span class="section-title">Visit Protocol</span>
-    <div class="val" style="text-transform:uppercase;font-size:12px;">${appt.type || 'Consultation'}</div>
+  <div class="info-cell">
+    <span class="lbl">Date &amp; Time</span>
+    <div class="val">${date}</div>
+    <div class="meta">${time}</div>
   </div>
 </div>
-<span class="section-title">Nurse Vitals Audit</span>
-<div class="vitals-grid">
-  <div class="vital-box"><span class="lbl">BP (mmHg)</span><div class="vital-input"></div></div>
-  <div class="vital-box"><span class="lbl">Pulse (bpm)</span><div class="vital-input"></div></div>
-  <div class="vital-box"><span class="lbl">Temp (F)</span><div class="vital-input"></div></div>
-  <div class="vital-box"><span class="lbl">SPO2 (%)</span><div class="vital-input"></div></div>
-  <div class="vital-box"><span class="lbl">Weight (kg)</span><div class="vital-input"></div></div>
-</div>
-<span class="section-title">Clinical Consultation &amp; Rx</span>
-<div class="clinical-container"></div>
-<div class="footer"><div>SYSTEM GENERATED</div><div>SIGNATURE: __________________________</div></div>
 </body></html>`);
                             }}
                             className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
