@@ -53,6 +53,7 @@ interface ReceptionActionCenterProps {
     taxConfig?: any
     uoms?: any[]
     currency?: string
+    hospitalInfo?: any
 }
 
 export function ReceptionActionCenter({
@@ -71,7 +72,8 @@ export function ReceptionActionCenter({
     billableItems = [],
     taxConfig = { defaultTax: null, taxRates: [] },
     uoms = [],
-    currency = '₹'
+    currency = '₹',
+    hospitalInfo = null
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
@@ -1225,6 +1227,7 @@ function PatientCard({
                 <div className="flex items-center gap-1 mt-1">
                     <OpSlipDialog
                         appointment={apt}
+                        hospitalInfo={hospitalInfo}
                         trigger={
                             <button
                                 className="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all"

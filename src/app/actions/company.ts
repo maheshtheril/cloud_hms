@@ -55,7 +55,7 @@ export async function getCurrentCompany() {
     try {
         return await prisma.company.findUnique({
             where: { id: companyId },
-            select: { id: true, name: true, industry: true, logo_url: true }
+            select: { id: true, name: true, industry: true, logo_url: true, metadata: true }
         });
     } catch (error) {
         console.error("Failed to fetch current company:", error);

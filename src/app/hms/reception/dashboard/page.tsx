@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { ReceptionActionCenter } from "@/components/hms/reception/reception-action-center"
 import { redirect } from "next/navigation"
-import { getBranches } from "@/app/actions/company"
+import { getBranches, getCurrentCompany } from "@/app/actions/company"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +47,7 @@ export default async function ReceptionDashboardPage() {
 
         const branchesRes = await getBranches()
         const branches = branchesRes.success ? branchesRes.data : []
+        const currentCompany = await getCurrentCompany()
         const isAdmin = !!session?.user?.isAdmin || !!session?.user?.isTenantAdmin
         const todayStart = new Date()
         todayStart.setHours(0, 0, 0, 0)
@@ -301,6 +302,7 @@ export default async function ReceptionDashboardPage() {
                     taxConfig={serialize(taxConfig)}
                     uoms={serialize(uoms)}
                     currency={currency}
+                    hospitalInfo={serialize(currentCompany)}
                 />
             </div>
         )

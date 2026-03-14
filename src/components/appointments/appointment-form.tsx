@@ -25,6 +25,7 @@ interface AppointmentFormProps {
     taxConfig?: any
     uoms?: any[]
     currency?: string
+    hospitalInfo?: any
     initialData?: {
         patient_id?: string
         date?: string
@@ -46,7 +47,8 @@ export function AppointmentForm({
     initialData = {},
     editingAppointment,
     onClose,
-    onMinimize
+    onMinimize,
+    hospitalInfo = null
 }: AppointmentFormProps) {
     const { toast } = useToast()
     console.log("DEBUG: Appointment Form Component Loaded - VERSION-FIX-APPLIED");
@@ -473,7 +475,7 @@ export function AppointmentForm({
 
     // [NEW] SUCCESS STAGE VIEW (REFACTORED: Moved inside main return to survive billing terminal)
     const renderSuccessView = () => (
-        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[40] bg-slate-950 flex items-center justify-center p-4">
             <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-10 text-center animate-in zoom-in-95 duration-300">
                 <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
                     <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
@@ -495,6 +497,7 @@ export function AppointmentForm({
                                 patient: saveSuccess.patient || selectedPatientData || selectedPatient,
                                 clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
                             }}
+                            hospitalInfo={hospitalInfo}
                             defaultPrintMode="standard"
                             trigger={
                                 <button className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -509,6 +512,7 @@ export function AppointmentForm({
                                 patient: saveSuccess.patient || selectedPatientData || selectedPatient,
                                 clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
                             }}
+                            hospitalInfo={hospitalInfo}
                             defaultPrintMode="label"
                             trigger={
                                 <button className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">

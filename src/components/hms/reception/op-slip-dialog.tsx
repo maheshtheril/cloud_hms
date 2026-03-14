@@ -13,9 +13,10 @@ interface OpSlipDialogProps {
     appointment: any
     trigger?: React.ReactNode
     defaultPrintMode?: 'standard' | 'letterhead' | 'thermal' | 'label'
+    hospitalInfo?: any
 }
 
-export function OpSlipDialog({ appointment, trigger, defaultPrintMode = 'standard' }: OpSlipDialogProps) {
+export function OpSlipDialog({ appointment, trigger, defaultPrintMode = 'standard', hospitalInfo }: OpSlipDialogProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [printMode, setPrintMode] = useState<'standard' | 'letterhead' | 'thermal' | 'label'>(defaultPrintMode)
 
@@ -249,8 +250,9 @@ export function OpSlipDialog({ appointment, trigger, defaultPrintMode = 'standar
                     </head>
                     <body>
                         <div class="header">
-                            <h1>Clinical OP Visit Slip</h1>
-                            <p>Ziona Medical Center - Outpatient Department</p>
+                            ${hospitalInfo?.logo_url ? `<img src="${hospitalInfo.logo_url}" style="height: 60px; margin-bottom: 10px;" />` : ''}
+                            <h1>${hospitalInfo?.name || 'Clinical OP Visit Slip'}</h1>
+                            <p>${hospitalInfo?.metadata?.address || 'Medical Center - Outpatient Department'}</p>
                         </div>
                         
                         <div class="ticket-info">
