@@ -986,9 +986,15 @@ export async function updateWhatsAppSettings(data: {
         const existingData = (existing?.value as any) || {};
         console.log(`[WHATSAPP SAVE] Existing record found: ${!!existing}, Has Token: ${!!existingData.token}`);
 
+        let cleanInstanceId = (data.instanceId ?? '').trim().toLowerCase();
+        if (cleanInstanceId.startsWith('instance')) {
+            cleanInstanceId = cleanInstanceId.substring(8);
+        }
+        const formattedInstanceId = `instance${cleanInstanceId}`;
+
         const configValue = {
             enabled: data.enabled,
-            instanceId: (data.instanceId ?? '').trim(),
+            instanceId: formattedInstanceId,
             token: (data.token && data.token.trim() !== '')
                 ? data.token.trim()
                 : (existingData.token || ''),

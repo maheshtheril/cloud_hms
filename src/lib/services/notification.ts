@@ -105,9 +105,11 @@ export class NotificationService {
             }
 
             // Ensure instanceId format is correct (e.g. instance12345)
-            const resolvedInstanceId = instanceId.toString().toLowerCase().startsWith('instance') 
-                ? instanceId 
-                : `instance${instanceId}`;
+            let cleanId = instanceId.toString().trim();
+            if (cleanId.toLowerCase().startsWith('instance')) {
+                cleanId = cleanId.substring(8); // Remove 'instance' 
+            }
+            const resolvedInstanceId = `instance${cleanId.toLowerCase()}`;
 
             const url = `https://api.ultramsg.com/${resolvedInstanceId}/messages/${endpoint}`;
             const maskedToken = token.length > 5 ? `${token.slice(0, 4)}...${token.slice(-2)}` : 'INVALID';
@@ -211,7 +213,18 @@ export class NotificationService {
                 priority: 10
             };
 
-            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/document`, {
+            // Ensure instanceId format is correct (e.g. instance12345)
+            let cleanId = instanceId.toString().trim();
+            if (cleanId.toLowerCase().startsWith('instance')) {
+                cleanId = cleanId.substring(8); // Remove 'instance' 
+            }
+            const resolvedInstanceId = `instance${cleanId.toLowerCase()}`;
+
+            const url = `https://api.ultramsg.com/${resolvedInstanceId}/messages/document`;
+            const maskedToken = token.length > 5 ? `${token.slice(0, 4)}...${token.slice(-2)}` : 'INVALID';
+            console.log(`[WhatsApp-Fetch-Prescription] POST ${url} | Token: ${maskedToken} | To: ${phone}`);
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -290,7 +303,18 @@ export class NotificationService {
                 priority: 10
             };
 
-            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+            // Ensure instanceId format is correct (e.g. instance12345)
+            let cleanId = instanceId.toString().trim();
+            if (cleanId.toLowerCase().startsWith('instance')) {
+                cleanId = cleanId.substring(8); // Remove 'instance' 
+            }
+            const resolvedInstanceId = `instance${cleanId.toLowerCase()}`;
+
+            const url = `https://api.ultramsg.com/${resolvedInstanceId}/messages/chat`;
+            const maskedToken = token.length > 5 ? `${token.slice(0, 4)}...${token.slice(-2)}` : 'INVALID';
+            console.log(`[WhatsApp-Fetch-Link] POST ${url} | Token: ${maskedToken} | To: ${phone}`);
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
