@@ -475,7 +475,7 @@ export function AppointmentForm({
 
     // [NEW] SUCCESS STAGE VIEW (REFACTORED: Moved inside main return to survive billing terminal)
     const renderSuccessView = () => (
-        <div className="fixed inset-0 z-[40] bg-slate-950 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
             <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-10 text-center animate-in zoom-in-95 duration-300">
                 <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
                     <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
@@ -491,36 +491,130 @@ export function AppointmentForm({
                 {/* CLEAN SUCCESS ACTIONS */}
                 <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
-                        <OpSlipDialog
-                            appointment={{
-                                ...saveSuccess,
-                                patient: saveSuccess.patient || selectedPatientData || selectedPatient,
-                                clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const appt = {
+                                    ...saveSuccess,
+                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                                };
+                                const patientName = `${appt.patient?.first_name || ''} ${appt.patient?.last_name || ''}`;
+                                const doctorName = `Dr. ${appt.clinician?.first_name || ''} ${appt.clinician?.last_name || ''}`;
+                                const date = new Date(appt.start_time || appt.starts_at).toLocaleDateString();
+                                const time = new Date(appt.start_time || appt.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const tokenNumber = appt.id.split('-')[0].toUpperCase();
+                                const printWindow = window.open('', '_blank');
+                                if (!printWindow) { alert('Please allow popups to print.'); return; }
+                                printWindow.document.write(`<!DOCTYPE html><html><head><title>OP Slip - ${patientName}</title>
+                                <style>
+                                  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+                                  body { font-family: 'Inter', sans-serif; line-height: 1.4; padding: 1.5cm; color: #1a202c; background: white; }
+                                  @media print { @page { margin: 0; size: A4; } body { margin: 0; } }
+                                  .header { text-align: center; margin-bottom: 1cm; border-bottom: 3px solid #000; padding-bottom: 10px; }
+                                  .header h1 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; }
+                                  .header p { margin: 4px 0 0; font-size: 12px; color: #4a5568; }
+                                  .header img { height: 60px; margin-bottom: 10px; display:block; margin-left:auto; margin-right:auto; }
+                                  .ticket-info { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; background: #f7fafc; padding: 15px; border-radius: 8px; }
+                                  .token-box { background: #000; color: white; padding: 10px 20px; border-radius: 6px; text-align: center; }
+                                  .token-label { font-size: 10px; font-weight: 900; color: #cbd5e0; text-transform: uppercase; }
+                                  .token-value { font-size: 24px; font-weight: 900; }
+                                  .section-title { font-size: 11px; font-weight: 900; text-transform: uppercase; color: white; background: #2d3748; padding: 4px 10px; display: inline-block; margin-bottom: 10px; border-radius: 4px; }
+                                  .label { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; display: block; }
+                                  .value { font-weight: 900; font-size: 16px; margin-bottom: 4px; }
+                                  .info-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-bottom: 30px; }
+                                  .vitals-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; border: 2px solid #edf2f7; padding: 15px; border-radius: 12px; margin-bottom: 30px; }
+                                  .vital-box { border-right: 1px solid #edf2f7; padding-right: 10px; }
+                                  .vital-box:last-child { border: none; }
+                                  .vital-input { border-bottom: 1px dashed #cbd5e0; height: 25px; margin-top: 5px; }
+                                  .clinical-container { border: 2px solid #2d3748; border-radius: 12px; min-height: 16cm; padding: 20px; }
+                                  .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 10px; }
+                                </style></head><body>
+                                <div class="header">
+                                  ${hospitalInfo?.logo_url ? `<img src="${hospitalInfo.logo_url}" />` : ''}
+                                  <h1>${hospitalInfo?.name || 'OP Visit Slip'}</h1>
+                                  <p>${hospitalInfo?.metadata?.address || 'Outpatient Department'}</p>
+                                </div>
+                                <div class="ticket-info">
+                                  <div>
+                                    <span class="label">Patient Name &amp; ID</span>
+                                    <div class="value">${patientName}</div>
+                                    <div style="font-size:12px;font-weight:700;">ID: ${appt.patient?.patient_number || 'N/A'} | ${appt.patient?.gender || ''}</div>
+                                  </div>
+                                  <div class="token-box">
+                                    <div class="token-label">OP TOKEN</div>
+                                    <div class="token-value">#${tokenNumber}</div>
+                                  </div>
+                                </div>
+                                <div class="info-grid">
+                                  <div>
+                                    <span class="section-title">Encounter Details</span>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                                      <div><span class="label">Consulting With</span><div class="value">${doctorName}</div><div style="font-size:10px;font-weight:bold;">${appt.clinician?.role || 'Clinician'}</div></div>
+                                      <div><span class="label">Date &amp; Time</span><div class="value">${date}</div><div style="font-size:10px;font-weight:bold;">${time}</div></div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span class="section-title">Visit Protocol</span>
+                                    <div class="value" style="text-transform:uppercase;font-size:12px;">${appt.type || 'Consultation'}</div>
+                                  </div>
+                                </div>
+                                <span class="section-title">Nurse Vitals Audit</span>
+                                <div class="vitals-grid">
+                                  <div class="vital-box"><span class="label">BP (mmHg)</span><div class="vital-input"></div></div>
+                                  <div class="vital-box"><span class="label">Pulse (bpm)</span><div class="vital-input"></div></div>
+                                  <div class="vital-box"><span class="label">Temp (°F)</span><div class="vital-input"></div></div>
+                                  <div class="vital-box"><span class="label">SPO2 (%)</span><div class="vital-input"></div></div>
+                                  <div class="vital-box"><span class="label">Weight (kg)</span><div class="vital-input"></div></div>
+                                </div>
+                                <span class="section-title">Clinical Consultation &amp; Rx</span>
+                                <div class="clinical-container"></div>
+                                <div class="footer"><div>SYSTEM GENERATED</div><div>SIGNATURE: __________________________</div></div>
+                                <script>window.onload = () => { window.print(); window.close(); };<\/script>
+                                </body></html>`);
+                                printWindow.document.close();
                             }}
-                            hospitalInfo={hospitalInfo}
-                            defaultPrintMode="standard"
-                            trigger={
-                                <button className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                    <Printer className="h-4 w-4" /> OP Slip (A4)
-                                </button>
-                            }
-                        />
+                            className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Printer className="h-4 w-4" /> OP Slip (A4)
+                        </button>
 
-                        <OpSlipDialog
-                            appointment={{
-                                ...saveSuccess,
-                                patient: saveSuccess.patient || selectedPatientData || selectedPatient,
-                                clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const appt = {
+                                    ...saveSuccess,
+                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                                };
+                                const patientName = `${appt.patient?.first_name || ''} ${appt.patient?.last_name || ''}`;
+                                const doctorName = `Dr. ${appt.clinician?.first_name || ''} ${appt.clinician?.last_name || ''}`;
+                                const date = new Date(appt.start_time || appt.starts_at).toLocaleDateString();
+                                const tokenNumber = appt.id.split('-')[0].toUpperCase();
+                                const printWindow = window.open('', '_blank');
+                                if (!printWindow) { alert('Please allow popups to print.'); return; }
+                                printWindow.document.write(`<!DOCTYPE html><html><head><title>Label - ${patientName}</title>
+                                <style>
+                                  @page { margin: 0; size: 50mm 25mm; }
+                                  body { font-family: Arial,sans-serif; width: 46mm; margin: 0 auto; padding: 2mm 0; font-size: 8pt; }
+                                  .name { font-weight: 900; font-size: 10pt; text-transform: uppercase; }
+                                  .id { font-weight: bold; border-bottom: 1px solid black; padding-bottom: 1px; margin-bottom: 2px; }
+                                  .meta { font-size: 7pt; display: flex; justify-content: space-between; }
+                                </style></head><body>
+                                <div class="name">${patientName}</div>
+                                <div class="id">ID: ${appt.patient?.patient_number || 'N/A'}</div>
+                                <div class="meta"><span>${appt.patient?.gender || ''}</span><span>${date}</span></div>
+                                <div class="meta" style="margin-top:2px;"><span>T:#${tokenNumber}</span><span style="font-weight:bold;">${doctorName.slice(0,15)}</span></div>
+                                <script>window.onload = () => { window.print(); window.close(); };<\/script>
+                                </body></html>`);
+                                printWindow.document.close();
                             }}
-                            hospitalInfo={hospitalInfo}
-                            defaultPrintMode="label"
-                            trigger={
-                                <button className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                    <Printer className="h-4 w-4" /> Patient Label
-                                </button>
-                            }
-                        />
+                            className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Printer className="h-4 w-4" /> Patient Label
+                        </button>
                     </div>
+
 
                     {paidInvoiceId && (
                         <button
