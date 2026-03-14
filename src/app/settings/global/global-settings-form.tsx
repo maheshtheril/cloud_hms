@@ -88,9 +88,10 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
             setWhatsappEnabled(whatsappSettings.enabled ?? false);
             setWhatsappInstanceId(whatsappSettings.instanceId ?? '');
             setWhatsappAutoSendBill(whatsappSettings.autoSendBill ?? false);
+            // Ensure we update the existence flag from the server source of truth
             setHasExistingWhatsappToken(whatsappSettings.hasToken ?? false);
         }
-    }, [whatsappSettings]);
+    }, [whatsappSettings, whatsappSettings?.hasToken]);
 
     useEffect(() => {
         if (pdfSettings) {
@@ -341,8 +342,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                         whatsappToken 
                                             ? 'Entering new token...' 
                                             : hasExistingWhatsappToken 
-                                                ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '••••••••••••••••')
-                                                : 'Enter API Token'
+                                                ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
+                                                : 'Enter UltraMsg API Token'
                                     } 
                                     className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
                                 />

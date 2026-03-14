@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, unstable_noStore as noStore } from "next/cache"
 import crypto from 'crypto'
 
 export type ProfileFormState = {
@@ -895,6 +895,7 @@ export async function updatePaymentMappings(mappings: Record<string, string>) {
 
 // Internal server-only helper — includes the raw secret (never send to frontend)
 export async function getPaymentGatewayConfig(companyId: string, tenantId: string) {
+    noStore();
     const record = await prisma.hms_settings.findFirst({
         where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
     });
@@ -904,6 +905,7 @@ export async function getPaymentGatewayConfig(companyId: string, tenantId: strin
 // === WHATSAPP CONFIGURATION SETTINGS ===
 
 export async function getWhatsAppSettings(providedCompanyId?: string, providedTenantId?: string) {
+    noStore();
     const session = await auth();
     const companyId = providedCompanyId || session?.user?.companyId;
     const tenantId = providedTenantId || session?.user?.tenantId;
@@ -1031,6 +1033,7 @@ export async function getWhatsAppConfig(companyId: string, tenantId: string) {
 }
 
 export async function getPDFSettings(providedCompanyId?: string, providedTenantId?: string) {
+    noStore();
     const session = await auth();
     const companyId = providedCompanyId || session?.user?.companyId;
     const tenantId = providedTenantId || session?.user?.tenantId;

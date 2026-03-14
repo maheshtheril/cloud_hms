@@ -69,9 +69,10 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
             setWhatsappEnabled(whatsappSettings.enabled ?? false);
             setWhatsappInstanceId(whatsappSettings.instanceId ?? '');
             setWhatsappAutoSendBill(whatsappSettings.autoSendBill ?? false);
+            // Ensure we update the existence flag from the server source of truth
             setHasExistingWhatsappToken(whatsappSettings.hasToken ?? false);
         }
-    }, [whatsappSettings]);
+    }, [whatsappSettings, whatsappSettings?.hasToken]);
 
     useEffect(() => {
         if (pdfSettings) {
@@ -309,10 +310,10 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
                                 onChange={(e) => setWhatsappToken(e.target.value)} 
                                 placeholder={
                                     whatsappToken 
-                                        ? 'Update token...' 
+                                        ? 'Entering new token...' 
                                         : hasExistingWhatsappToken 
-                                            ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '••••••••••••••••')
-                                            : 'API Token'
+                                            ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '✓ SAVED & PROTECTED')
+                                            : 'Enter UltraMsg API Token'
                                 } 
                                 className={`w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono ${hasExistingWhatsappToken && !whatsappToken ? 'border-emerald-500/30' : ''}`} 
                             />
