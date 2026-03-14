@@ -548,7 +548,8 @@ export async function createInvoice(data: {
                 try {
                     const config = await getWhatsAppConfig(companyId, tenantId);
                     if (config?.autoSendBill) {
-                        await NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId);
+                        const wsRes = await NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId);
+                        if (!wsRes.success) console.warn(`${LOG_PREFIX} Auto-WhatsApp Send Failed:`, wsRes.error);
                     }
                 } catch (err) {
                     console.error(`${LOG_PREFIX} WhatsApp Notification Orchestration Failed:`, err);
@@ -845,7 +846,8 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                 try {
                     const config = await getWhatsAppConfig(companyId, session.user.tenantId!);
                     if (config?.autoSendBill) {
-                        await NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!);
+                        const wsRes = await NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!);
+                        if (!wsRes.success) console.warn("Auto-WhatsApp Send Failed:", wsRes.error);
                     }
                 } catch (err) {
                     console.error("WhatsApp Notification Orchestration Failed:", err);
@@ -1034,7 +1036,8 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             try {
                 const wsConfig = await getWhatsAppConfig(session.user.companyId!, session.user.tenantId!);
                 if (wsConfig?.autoSendBill) {
-                    await NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!);
+                    const wsRes = await NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!);
+                    if (!wsRes.success) console.warn("[Billing-AutoSend] WhatsApp Send Failed:", wsRes.error);
                 }
             } catch (err) {
                 console.error("[Billing-AutoSend] WhatsApp Notification Orchestration Failed:", err);
