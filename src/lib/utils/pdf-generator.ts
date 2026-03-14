@@ -26,19 +26,19 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
 
         // 1. Draw Title (TAX INVOICE) - always top left
         doc.setTextColor(68, 68, 68);
-        doc.setFontSize(26);
+        doc.setFontSize(14); // Reduced from 26
         doc.setFont('helvetica', 'bold');
         doc.text('TAX INVOICE', margin, headerY);
 
-        doc.setFontSize(10);
+        doc.setFontSize(8); // Slightly smaller
         doc.setFont('helvetica', 'normal');
-        doc.text(`Invoice #: ${invoice.invoice_number}`, margin, headerY + 20);
-        doc.text(`Date: ${new Date(invoice.invoice_date || invoice.created_at).toLocaleDateString()}`, margin, headerY + 35);
+        doc.text(`Invoice #: ${invoice.invoice_number}`, margin, headerY + 15);
+        doc.text(`Date: ${new Date(invoice.invoice_date || invoice.created_at).toLocaleDateString()}`, margin, headerY + 27);
 
         // 2. Draw Logo if enabled
+        let logoHeight = 0;
         if (showLogo && logoUrl) {
             try {
-                // Determine logo position
                 let logoX = margin;
                 if (alignment === 'right') logoX = pageWidth - margin - 60;
                 else if (alignment === 'center') logoX = (pageWidth / 2) - 30;
@@ -46,10 +46,7 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
                 const logoBase64 = await fetchImageAsBase64(logoUrl);
                 if (logoBase64) {
                     doc.addImage(logoBase64, 'PNG', logoX, headerY - 30, 60, 60, undefined, 'FAST');
-                    if (alignment === 'center' || alignment === 'left') {
-                        // Push text down if logo is above/beside
-                        // headerY += 40; 
-                    }
+                    logoHeight = 40; // Space occupied by logo
                 }
             } catch (e) {
                 console.error("[PDF-Logo] Failed to embed logo:", e);
@@ -61,56 +58,55 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
         const textAlign = alignment;
 
         doc.setTextColor(79, 70, 229); // Indigo-600
-        doc.setFontSize(config?.hospitalNameSize || 16);
+        doc.setFontSize(config?.hospitalNameSize || 12); // Reduced default from 16
         doc.setFont('helvetica', 'bold');
 
-        let brandY = headerY;
-        // If center/left alignment, we might want to push it down if there's a logo above
+        let brandY = headerY + logoHeight; // Move down if logo exists
         if (alignment === 'center') brandY = headerY + 60;
         if (alignment === 'left') brandY = headerY + 70;
 
         doc.text(companyName, brandX, brandY, { align: textAlign });
 
         doc.setTextColor(102, 102, 102);
-        doc.setFontSize(config?.addressSize || 10);
+        doc.setFontSize(config?.addressSize || 8); // Reduced default from 10
         doc.setFont('helvetica', 'normal');
-        doc.text(address, brandX, brandY + 18, { align: textAlign });
+        doc.text(address, brandX, brandY + 12, { align: textAlign });
 
         if (config?.showContactInfo !== false) {
-            doc.text(contactStr, brandX, brandY + 33, { align: textAlign });
+            doc.text(contactStr, brandX, brandY + 22, { align: textAlign });
         }
 
         if (meta?.gstin) {
-            doc.text(`GSTIN: ${meta.gstin}`, brandX, brandY + 48, { align: textAlign });
+            doc.text(`GSTIN: ${meta.gstin}`, brandX, brandY + 32, { align: textAlign });
         }
 
         // Divider
         doc.setDrawColor(238, 238, 238);
-        const dividerY = Math.max(brandY + 65, 125);
+        const dividerY = Math.max(brandY + 45, 125);
         doc.line(margin, dividerY, pageWidth - margin, dividerY);
 
         // --- Patient Info ---
         doc.setTextColor(153, 153, 153);
-        doc.setFontSize(10);
-        doc.text('BILL TO', margin, dividerY + 25);
+        doc.setFontSize(8);
+        doc.text('BILL TO', margin, dividerY + 20);
 
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
+        doc.setFontSize(10); // Reduced from 12
         doc.setFont('helvetica', 'bold');
-        doc.text(`${invoice.hms_patient?.first_name} ${invoice.hms_patient?.last_name}`, 50, 155);
+        doc.text(`${invoice.hms_patient?.first_name} ${invoice.hms_patient?.last_name}`, margin, dividerY + 35); // Relative positioning
 
         doc.setTextColor(102, 102, 102);
-        doc.setFontSize(10);
+        doc.setFontSize(8); // Reduced from 10
         doc.setFont('helvetica', 'normal');
-        doc.text(`Patient ID: ${invoice.hms_patient?.patient_number || 'N/A'}`, 50, 170);
-        doc.text(`Mobile: ${((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}`, 50, 185);
+        doc.text(`Patient ID: ${invoice.hms_patient?.patient_number || 'N/A'}`, margin, dividerY + 47);
+        doc.text(`Mobile: ${((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}`, margin, dividerY + 59);
 
         const patientMeta = invoice.hms_patient?.metadata as any;
         if (patientMeta?.registration_expiry) {
             const expiryStr = new Date(patientMeta.registration_expiry).toLocaleDateString();
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(220, 38, 38); // Red-600
-            doc.text(`Registration Valid Till: ${expiryStr}`, 50, 200);
+            doc.text(`Registration Valid Till: ${expiryStr}`, margin, dividerY + 71);
             doc.setTextColor(102, 102, 102);
             doc.setFont('helvetica', 'normal');
         }

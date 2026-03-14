@@ -26,15 +26,16 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
 
         // 1. Draw Title (PRESCRIPTION) - always top left
         doc.setTextColor(68, 68, 68);
-        doc.setFontSize(24);
+        doc.setFontSize(14); // Reduced from 24
         doc.setFont('helvetica', 'bold');
         doc.text('PRESCRIPTION', margin, headerY);
 
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Date: ${new Date(prescription.created_at).toLocaleDateString()}`, margin, headerY + 20);
+        doc.text(`Date: ${new Date(prescription.created_at).toLocaleDateString()}`, margin, headerY + 15);
 
         // 2. Draw Logo if enabled
+        let logoHeight = 0;
         if (showLogo && logoUrl) {
             try {
                 let logoX = margin;
@@ -44,6 +45,7 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
                 const logoBase64 = await fetchImageAsBase64(logoUrl);
                 if (logoBase64) {
                     doc.addImage(logoBase64, 'PNG', logoX, headerY - 30, 60, 60, undefined, 'FAST');
+                    logoHeight = 40;
                 }
             } catch (e) {
                 console.error("[Prescription-Logo] Failed to embed logo:", e);
@@ -55,50 +57,50 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
         const textAlign = alignment;
 
         doc.setTextColor(79, 70, 229); // Indigo-600
-        doc.setFontSize(config?.hospitalNameSize || 14);
+        doc.setFontSize(config?.hospitalNameSize || 12); // Reduced from 14
         doc.setFont('helvetica', 'bold');
 
-        let brandY = headerY;
+        let brandY = headerY + logoHeight;
         if (alignment === 'center') brandY = headerY + 60;
         if (alignment === 'left') brandY = headerY + 70;
 
         doc.text(companyName, brandX, brandY, { align: textAlign });
 
         doc.setTextColor(102, 102, 102);
-        doc.setFontSize(config?.addressSize || 10);
+        doc.setFontSize(config?.addressSize || 8); // Reduced from 10
         doc.setFont('helvetica', 'normal');
-        doc.text(address, brandX, brandY + 15, { align: textAlign });
+        doc.text(address, brandX, brandY + 12, { align: textAlign });
 
         if (config?.showContactInfo !== false) {
-            doc.text(contactStr, brandX, brandY + 30, { align: textAlign });
+            doc.text(contactStr, brandX, brandY + 22, { align: textAlign });
         }
 
         // Divider
         doc.setDrawColor(238, 238, 238);
-        const dividerY = Math.max(brandY + 45, 115);
+        const dividerY = Math.max(brandY + 35, 115);
         doc.line(margin, dividerY, pageWidth - margin, dividerY);
 
         // --- Patient Info ---
         doc.setTextColor(153, 153, 153);
-        doc.setFontSize(10);
-        doc.text('PATIENT', margin, dividerY + 25);
+        doc.setFontSize(8);
+        doc.text('PATIENT', margin, dividerY + 20);
 
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
+        doc.setFontSize(10); // Reduced from 12
         doc.setFont('helvetica', 'bold');
-        doc.text(`${prescription.hms_patient?.first_name} ${prescription.hms_patient?.last_name}`, 50, 155);
+        doc.text(`${prescription.hms_patient?.first_name} ${prescription.hms_patient?.last_name}`, margin, dividerY + 35);
 
         doc.setTextColor(102, 102, 102);
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Age/Gender: ${prescription.hms_patient?.age || 'N/A'} / ${prescription.hms_patient?.gender || 'N/A'}`, 50, 170);
+        doc.text(`Age/Gender: ${prescription.hms_patient?.age || 'N/A'} / ${prescription.hms_patient?.gender || 'N/A'}`, margin, dividerY + 47);
 
         const patientMeta = prescription.hms_patient?.metadata as any;
         if (patientMeta?.registration_expiry) {
             const expiryStr = new Date(patientMeta.registration_expiry).toLocaleDateString();
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(220, 38, 38); // Red-600
-            doc.text(`Registration Valid Till: ${expiryStr}`, 50, 185);
+            doc.text(`Registration Valid Till: ${expiryStr}`, margin, dividerY + 59);
             doc.setTextColor(102, 102, 102);
             doc.setFont('helvetica', 'normal');
         }

@@ -35,7 +35,7 @@ export function PremiumPrintHeader({ company, title, subtitle, documentNumber }:
                         </div>
                     )}
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-800 tracking-tight leading-none mb-2">{company.name.toUpperCase()}</h1>
+                        <h1 className="text-xl font-bold text-slate-800 tracking-tight leading-none mb-2">{company.name.toUpperCase()}</h1>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 font-medium">
                             {address && (
                                 <span className="flex items-center gap-1.5 text-xs">
@@ -69,8 +69,8 @@ export function PremiumPrintHeader({ company, title, subtitle, documentNumber }:
                 </div>
 
                 <div className="text-right flex flex-col items-end">
-                    <div className="border border-slate-300 text-slate-800 px-6 py-2 rounded-lg mb-3">
-                        <h2 className="text-xl font-bold tracking-widest uppercase">{title}</h2>
+                    <div className="border border-slate-300 text-slate-800 px-4 py-1.5 rounded-lg mb-2">
+                        <h2 className="text-sm font-bold tracking-widest uppercase">{title}</h2>
                     </div>
                     <p className="text-sm font-bold text-slate-800 uppercase">NO: <span className="font-mono text-indigo-600">{documentNumber}</span></p>
                     {subtitle && <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
