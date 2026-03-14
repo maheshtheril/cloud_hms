@@ -523,47 +523,43 @@ export function AppointmentForm({
                                 const tokenNumber = appt.id.split('-')[0].toUpperCase();
                                 printHtml(`<!DOCTYPE html><html><head><title>OP Slip - ${patientName}</title>
 <style>
-  body { font-family: Arial, sans-serif; line-height: 1.5; padding: 1.5cm; color: #1a202c; background: white; }
-  @media print { @page { margin: 0; size: A4; } body { margin: 0; padding: 1.5cm; } }
-  .header { text-align: center; margin-bottom: 1.5cm; border-bottom: 3px solid #000; padding-bottom: 14px; }
-  .header h1 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; }
-  .header p { margin: 6px 0 0; font-size: 13px; color: #4a5568; }
-  .header img { height: 70px; margin-bottom: 12px; display:block; margin-left:auto; margin-right:auto; }
-  .ticket-info { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; background: #f7fafc; padding: 18px; border-radius: 10px; }
-  .token-box { background: #000; color: white; padding: 12px 24px; border-radius: 8px; text-align: center; }
-  .token-label { font-size: 10px; font-weight: 900; color: #cbd5e0; text-transform: uppercase; display: block; margin-bottom: 4px; }
-  .token-value { font-size: 28px; font-weight: 900; }
-  .lbl { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; display: block; margin-bottom: 2px; }
-  .val { font-weight: 900; font-size: 17px; }
-  .meta { font-size: 12px; font-weight: 700; color: #4a5568; margin-top: 4px; }
-  .info-row { display: flex; gap: 40px; margin-top: 20px; }
-  .info-cell { flex: 1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 2cm; }
+  @media print { @page { margin: 0; size: A4; } body { padding: 2cm; } }
+  .slip { border: 2px solid #000; border-radius: 10px; overflow: hidden; }
+  .slip-top { display: flex; align-items: stretch; border-bottom: 2px solid #000; }
+  .patient-block { flex: 1; padding: 20px 24px; border-right: 2px solid #000; }
+  .token-block { width: 160px; padding: 20px 24px; text-align: center; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .lbl { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #718096; display: block; margin-bottom: 4px; }
+  .val-lg { font-size: 20px; font-weight: 900; color: #1a202c; line-height: 1.1; }
+  .val-sm { font-size: 13px; font-weight: 700; color: #4a5568; margin-top: 4px; }
+  .token-num { font-size: 26px; font-weight: 900; color: #1a202c; letter-spacing: -1px; }
+  .slip-bottom { display: grid; grid-template-columns: 1fr 1fr; }
+  .info-cell { padding: 16px 24px; }
+  .info-cell:first-child { border-right: 2px solid #000; }
+  .val-md { font-size: 16px; font-weight: 900; color: #1a202c; }
 </style></head><body>
-<div class="header">
-  ${hospitalInfo?.logo_url ? `<img src="${hospitalInfo.logo_url}" />` : ''}
-  <h1>${hospitalInfo?.name || 'OP Visit Slip'}</h1>
-  <p>${hospitalInfo?.metadata?.address || 'Outpatient Department'}</p>
-</div>
-<div class="ticket-info">
-  <div>
-    <span class="lbl">Patient Name &amp; ID</span>
-    <div class="val">${patientName}</div>
-    <div class="meta">ID: ${appt.patient?.patient_number || 'N/A'} | ${appt.patient?.gender || ''}</div>
+<div class="slip">
+  <div class="slip-top">
+    <div class="patient-block">
+      <span class="lbl">Patient Name</span>
+      <div class="val-lg">${patientName}</div>
+      <div class="val-sm">ID: ${appt.patient?.patient_number || 'N/A'}&nbsp;&nbsp;|&nbsp;&nbsp;${appt.patient?.gender || ''}</div>
+    </div>
+    <div class="token-block">
+      <span class="lbl">OP Token</span>
+      <div class="token-num">#${tokenNumber}</div>
+    </div>
   </div>
-  <div class="token-box">
-    <span class="token-label">OP TOKEN</span>
-    <div class="token-value">#${tokenNumber}</div>
-  </div>
-</div>
-<div class="info-row">
-  <div class="info-cell">
-    <span class="lbl">Consulting Doctor</span>
-    <div class="val">${doctorName}</div>
-  </div>
-  <div class="info-cell">
-    <span class="lbl">Date &amp; Time</span>
-    <div class="val">${date}</div>
-    <div class="meta">${time}</div>
+  <div class="slip-bottom">
+    <div class="info-cell">
+      <span class="lbl">Consulting Doctor</span>
+      <div class="val-md">${doctorName}</div>
+    </div>
+    <div class="info-cell">
+      <span class="lbl">Date &amp; Time</span>
+      <div class="val-md">${date} &nbsp; ${time}</div>
+    </div>
   </div>
 </div>
 </body></html>`);
