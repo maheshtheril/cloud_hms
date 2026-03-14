@@ -911,7 +911,8 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
     const tenantId = providedTenantId || session?.user?.tenantId;
 
     if (!companyId || !tenantId) return { success: false, error: 'Unauthorized' };
-
+    
+    try {
         console.log(`[WHATSAPP FETCH] Searching for: Co: ${companyId}, Te: ${tenantId}`);
         
         let record = await prisma.hms_settings.findFirst({
