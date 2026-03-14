@@ -1054,9 +1054,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
               {/* FINISH & EXIT (World Standard Hub Redirect) */}
               <button
-                onClick={() => {
+                type="button"
+                onClick={async () => {
+                  router.push('/hms/billing');
+                  router.refresh();
                   if (onClose) onClose();
-                  else router.push('/hms/billing');
                 }}
                 className="group p-8 bg-slate-900 dark:bg-white rounded-[2.5rem] border-4 border-white/10 hover:border-indigo-500 transition-all text-center shadow-2xl shadow-slate-900/50"
               >

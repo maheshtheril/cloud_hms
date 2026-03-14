@@ -59,15 +59,12 @@ export class NotificationService {
             const patientName = `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`;
             const companyName = company?.name || "HealthCare Center";
 
-            // Get base URL for the billing link
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
-            const billLink = `${baseUrl}/hms/billing/${invoice.id}`;
+            // Bill link removed per user request
 
             const message = `Hello *${patientName}*,\n\n` +
                 `Here is your invoice for *${invoice.currency} ${Number(invoice.total).toLocaleString('en-IN')}*.\n` +
                 `Please find the attached PDF.\n\n` +
-                `Thank you,\n*${companyName}*\n\n` +
-                `🔗 Bill Link: ${billLink}`;
+                `Thank you,\n*${companyName}*`;
 
             // 5. Dynamic API Configuration
             const dynamicConfig = await this.getDynamicConfig(invoice.company_id!, tenantId);
