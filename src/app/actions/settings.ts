@@ -910,7 +910,8 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
 
     if (!companyId || !tenantId) return { success: false, error: 'Unauthorized' };
 
-    try {
+        console.log(`[WHATSAPP FETCH] Searching for: Co: ${companyId}, Te: ${tenantId}`);
+        
         let record = await prisma.hms_settings.findFirst({
             where: {
                 company_id: companyId,
@@ -920,6 +921,7 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
         });
 
         if (!record) {
+            console.log(`[WHATSAPP FETCH] Company record not found. Trying tenant fallback: ${tenantId}`);
             record = await prisma.hms_settings.findFirst({
                 where: {
                     tenant_id: tenantId,
@@ -931,7 +933,7 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
         const data = (record?.value as any) || {};
         const hasToken = !!(data.token && data.token.length > 0);
         
-        console.log(`[WHATSAPP FETCH] Record found: ${!!record}, Has Token: ${hasToken}, Company: ${companyId}`);
+        console.log(`[WHATSAPP FETCH] Final: Found=${!!record}, HasToken=${hasToken}, Key=${record?.id || 'N/A'}`);
 
         return {
             success: true,

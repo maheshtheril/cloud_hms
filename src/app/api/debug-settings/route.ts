@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getWhatsAppSettings } from "@/app/actions/settings";
 
 export async function GET() {
     const session = await auth();
     try {
+        const tenantId = session?.user?.tenantId;
+        const companyId = session?.user?.companyId;
+
         const allSettings = await prisma.hms_settings.findMany({
             where: { key: 'whatsapp_config' }
         });
@@ -19,13 +23,19 @@ export async function GET() {
             is_active: s.is_active
         }));
 
+        let settingsTest = null;
+        if (tenantId && companyId) {
+            settingsTest = await getWhatsAppSettings(companyId, tenantId);
+        }
+
         return NextResponse.json({ 
             success: true, 
             session: {
-                tenantId: session?.user?.tenantId,
-                companyId: session?.user?.companyId,
+                tenantId,
+                companyId,
                 userId: session?.user?.id
             },
+            settingsTest,
             count: allSettings.length, 
             data 
         });
