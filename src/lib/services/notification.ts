@@ -89,7 +89,8 @@ export class NotificationService {
             }
 
             // 6. Send Real HTTP Request (Switch between Chat and Document)
-            const endpoint = finalPdfBase64 ? 'document' : 'chat';
+            let endpoint = 'chat'; // Initialize endpoint
+            
             const payload: any = {
                 token: token,
                 to: phone,
@@ -97,6 +98,7 @@ export class NotificationService {
             };
 
             if (finalPdfBase64) {
+                endpoint = 'document';
                 payload.document = finalPdfBase64;
                 payload.filename = `Invoice_${invoice.invoice_number}.pdf`;
                 payload.caption = message;
@@ -114,7 +116,7 @@ export class NotificationService {
             const url = `https://api.ultramsg.com/${resolvedInstanceId}/messages/${endpoint}`;
             const maskedToken = token.length > 5 ? `${token.slice(0, 4)}...${token.slice(-2)}` : 'INVALID';
             
-            console.log(`[WhatsApp-Fetch] POST ${url} | Token: ${maskedToken} | To: ${phone}`);
+            console.log(`[WhatsApp-Fetch] ${endpoint} | URL: ${url} | Token: ${maskedToken} | To: ${phone}`);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -123,12 +125,16 @@ export class NotificationService {
             });
 
             const result = await response.json();
+            console.log(`[WhatsApp-Result] Raw:`, JSON.stringify(result));
 
-            if (result.sent === "true" || result.success) {
+            if (result.sent === "true" || result.success === true || result.id) {
+                console.log(`[WhatsApp-Success] Delivered to ${phone}`);
                 return { success: true, message: 'WhatsApp sent successfully' };
             } else {
                 console.error('[WhatsApp-Error]', result);
-                const errorMsg = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || 'Failed to deliver message');
+                const errorMsg = typeof result.error === 'object' 
+                    ? JSON.stringify(result.error) 
+                    : (result.error || result.message || 'Failed to deliver message');
                 return { success: false, error: errorMsg };
             }
 
@@ -166,20 +172,20 @@ export class NotificationService {
                 : null;
 
             // 2. Extract Phone
+            const patientName = `${prescription.hms_patient.first_name} ${prescription.hms_patient.last_name}`;
             const contact = prescription.hms_patient.contact as any;
-            let phone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
-            phone = phone.replace(/\D/g, '');
-            if (phone.length === 10) phone = '91' + phone;
-
+            const patientMobile = contact?.phone || contact?.mobile || contact?.primary_phone || '';
+            // Sanitize phone number to digits only
+            const phone = (patientMobile || '').replace(/\D/g, '');
             if (!phone) {
-                return { success: false, error: 'Patient phone number missing' };
+                console.warn(`[WhatsApp-Prescription] No valid phone number for Patient: ${patientName}`);
+                return { success: false, error: 'No phone number' };
             }
 
             // 3. Generate PDF
             const pdfBase64 = await generatePrescriptionPDFBase64(prescription, company);
 
             // 4. Construct Message
-            const patientName = `${prescription.hms_patient.first_name} ${prescription.hms_patient.last_name}`;
             const companyName = company?.name || "HealthCare Center";
             const message = `Hello *${patientName}*,\n\n` +
                 `Here is your digital prescription from *${companyName}*.\n` +
@@ -197,6 +203,7 @@ export class NotificationService {
             const isMock = !token || token.includes('mock');
 
             if (isMock) {
+                console.log(`[WhatsApp-Prescription-Mock] To: ${phone}\n[WhatsApp-Prescription-Mock] Message: ${message}\n[WhatsApp-Prescription-Mock] Attachment: [PDF DETECTED]`);
                 return {
                     success: true,
                     message: "WhatsApp prescription simulated (Mock Mode)."
@@ -204,13 +211,13 @@ export class NotificationService {
             }
 
             // 6. Send Real Request
-            const payload = {
+            const payload: any = {
                 token: token,
                 to: phone,
+                priority: 10,
                 document: pdfBase64,
-                filename: `Prescription_${new Date(prescription.created_at).getTime()}.pdf`,
-                caption: message,
-                priority: 10
+                filename: `Prescription_${patientName.replace(/\s+/g, '_')}.pdf`,
+                caption: `Medical Prescription for ${patientName}`
             };
 
             // Ensure instanceId format is correct (e.g. instance12345)
@@ -231,11 +238,17 @@ export class NotificationService {
             });
 
             const result = await response.json();
-            if (result.sent === "true" || result.success) {
+            console.log(`[WhatsApp-Prescription-Result] Raw:`, JSON.stringify(result));
+
+            if (result.sent === "true" || result.success === true || result.id) {
+                console.log(`[WhatsApp-Prescription-Success] Delivered to ${phone}`);
                 return { success: true, message: 'Prescription sent via WhatsApp' };
             } else {
-                const errorMsg = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || 'Failed to send WhatsApp');
-                return { success: false, error: errorMsg };
+                console.error('[WhatsApp-Prescription-Error]', result);
+                return { 
+                    success: false, 
+                    error: typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || result.message || 'Failed to deliver prescription') 
+                };
             }
 
         } catch (error) {
@@ -259,17 +272,17 @@ export class NotificationService {
             }
 
             // 2. Extract Phone Number
+            const patientName = `${patient.first_name} ${patient.last_name}`;
             const contact = patient.contact as any;
-            let phone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
-            phone = phone.replace(/\D/g, '');
-            if (phone.length === 10) phone = '91' + phone;
-
+            const patientPhone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
+            // Sanitize phone number to digits only
+            const phone = (patientPhone || '').replace(/\D/g, '');
             if (!phone) {
-                return { success: false, error: 'Patient phone number missing' };
+                console.warn(`[WhatsApp-Payment-Link] No valid phone number for Patient: ${patientName}`);
+                return { success: false, error: 'No phone number' };
             }
 
             // 3. Construct Message
-            const patientName = `${patient.first_name} ${patient.last_name}`;
             const message = `Hello *${patientName}*,\n\n` +
                 `Greetings from our medical center.\n\n` +
                 `A professional payment request of *${currency}${amount.toLocaleString('en-IN')}* has been generated for your recent visit.\n\n` +
@@ -296,7 +309,7 @@ export class NotificationService {
             }
 
             // 5. Send Real Request
-            const payload = {
+            const payload: any = {
                 token: token,
                 to: phone,
                 body: message,
@@ -321,10 +334,17 @@ export class NotificationService {
             });
 
             const result = await response.json();
-            if (result.sent === "true" || result.success) {
+            console.log(`[WhatsApp-Payment-Link-Result] Raw:`, JSON.stringify(result));
+
+            if (result.sent === "true" || result.success === true || result.id) {
+                console.log(`[WhatsApp-Payment-Link-Success] Delivered to ${phone}`);
                 return { success: true, message: 'Payment link sent via WhatsApp' };
             } else {
-                return { success: false, error: result.error || 'Failed to send WhatsApp link' };
+                console.error('[WhatsApp-Payment-Link-Error]', result);
+                return { 
+                    success: false, 
+                    error: typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || result.message || 'Failed to send WhatsApp link') 
+                };
             }
 
         } catch (error) {

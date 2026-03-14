@@ -1,0 +1,15 @@
+[
+  {
+    "id": "28afda50-56f1-41b7-994e-4d6d88e758ea",
+    "tenant_id": "4fceafe4-fa32-4016-856e-39a7e0e58d22",
+    "company_id": "f7a2f36c-898b-4f53-8394-9aa3f65c9914",
+    "key": "whatsapp_config",
+    "value": {
+      "token": "1dh0cx4esjoshpp7",
+      "enabled": true,
+      "instanceId": "Instance157389",
+      "lastUpdated": "2026-03-14T01:40:03.365Z",
+      "autoSendBill": true
+    }
+  }
+]
