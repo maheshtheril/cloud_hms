@@ -50,116 +50,69 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // 4. Session Enrichment (Robust)
                     try {
-                        // Fetch Branch Name
-                        let branchName = 'Main Branch';
-                        if (user.current_branch_id) {
-                            try {
-                                const branch = await prisma.hms_branch.findUnique({
-                                    where: { id: user.current_branch_id },
-                                    select: { name: true }
-                                });
-                                if (branch) branchName = branch.name;
-                            } catch (e) {
-                                console.warn("[AUTH] Failed to fetch branch name:", e);
-                            }
-                        }
+                    // [PERFORMANCE] Parallel Session Enrichment — all DB calls fire simultaneously
+                    const [branchResult, tenantInfo, company, tenantModules] = await Promise.all([
+                        // Branch name
+                        user.current_branch_id
+                            ? prisma.hms_branch.findUnique({ where: { id: user.current_branch_id }, select: { name: true } })
+                            : Promise.resolve(null),
+                        // Tenant details
+                        user.tenant_id
+                            ? prisma.tenant.findUnique({ where: { id: user.tenant_id }, select: { db_url: true, slug: true, name: true } })
+                            : Promise.resolve(null),
+                        // Company + currency
+                        user.company_id
+                            ? prisma.company.findFirst({ where: { id: user.company_id }, include: { company_settings: { include: { currencies: true } } } })
+                            : Promise.resolve(null),
+                        // Enabled modules
+                        user.tenant_id
+                            ? prisma.tenant_module.findMany({ where: { tenant_id: user.tenant_id, enabled: true }, select: { module_key: true } })
+                            : Promise.resolve([])
+                    ]);
 
-                        // Self-Healing for missing company_id
-                        if (user.tenant_id && !user.company_id) {
-                            try {
-                                let defaultCompany = await prisma.company.findFirst({
-                                    where: { tenant_id: user.tenant_id }
-                                });
+                    const moduleKeys = (tenantModules as any[]).map((m: any) => m.module_key);
+                    const branchName = branchResult?.name || 'Main Branch';
 
-                                if (!defaultCompany) {
-                                    defaultCompany = await prisma.company.create({
-                                        data: {
-                                            tenant_id: user.tenant_id,
-                                            name: "Default Company",
-                                            industry: "General"
-                                        }
-                                    });
-                                }
-
-                                await prisma.app_user.update({
-                                    where: { id: user.id },
-                                    data: { company_id: defaultCompany.id }
-                                });
-                                user.company_id = defaultCompany.id;
-                            } catch (e) {
-                                console.error("[AUTH] Self-healing failed:", e);
-                            }
-                        }
-
-                        // Fetch Tenant & Company Details
-                        let tenantInfo = null;
-                        if (user.tenant_id) {
-                            try {
-                                tenantInfo = await prisma.tenant.findUnique({
-                                    where: { id: user.tenant_id },
-                                    select: { db_url: true, slug: true, name: true }
-                                });
-                            } catch (e) {
-                                console.error("[AUTH] Tenant fetch failed:", e);
-                            }
-                        }
-
-                        let company = null;
-                        if (user.company_id) {
-                            try {
-                                company = await prisma.company.findFirst({
-                                    where: { id: user.company_id },
-                                    include: {
-                                        company_settings: {
-                                            include: {
-                                                currencies: true
-                                            }
-                                        }
-                                    }
-                                });
-                            } catch (e) {
-                                console.error("[AUTH] Company fetch failed:", e);
-                            }
-                        }
-
-                        // Modules
-                        let moduleKeys: string[] = [];
+                    // Self-heal missing company (rare path — don't block normal logins)
+                    if (user.tenant_id && !user.company_id && !company) {
                         try {
-                            const tenantModules = await prisma.tenant_module.findMany({
-                                where: { tenant_id: user.tenant_id, enabled: true },
-                                select: { module_key: true }
-                            });
-                            moduleKeys = tenantModules.map(m => m.module_key);
-                        } catch (modError) {
-                            console.error("[AUTH] Module fetch error:", modError);
+                            let defaultCompany = await prisma.company.findFirst({ where: { tenant_id: user.tenant_id } });
+                            if (!defaultCompany) {
+                                defaultCompany = await prisma.company.create({ data: { tenant_id: user.tenant_id, name: "Default Company", industry: "General" } });
+                            }
+                            await prisma.app_user.update({ where: { id: user.id }, data: { company_id: defaultCompany.id } });
+                            user.company_id = defaultCompany.id;
+                        } catch (e) {
+                            console.error("[AUTH] Self-healing failed:", e);
                         }
+                    }
 
-                        // Avatar
-                        const metadata = user.metadata as any;
-                        const avatarUrl = metadata?.avatar_url || null;
-                        const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
+                    const metadata = user.metadata as any;
+                    const avatarUrl = metadata?.avatar_url || null;
+                    const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
 
-                        return {
-                            id: user.id,
-                            email: user.email,
-                            name: user.name,
-                            role: user.role,
-                            isAdmin: user.is_admin,
-                            isTenantAdmin: user.is_tenant_admin,
-                            tenantId: user.tenant_id,
-                            companyId: user.company_id,
-                            companyName: company?.name || tenantInfo?.name || 'My Business',
-                            current_branch_id: user.current_branch_id,
-                            current_branch_name: branchName,
-                            modules: moduleKeys,
-                            image: safeImage,
-                            dbUrl: tenantInfo?.db_url,
-                            currencyCode: company?.company_settings?.currencies?.code || 'INR',
-                            currencySymbol: company?.company_settings?.currencies?.symbol || '₹',
-                            industry: company?.industry || 'General',
-                            hasCRM: moduleKeys.includes('crm'),
-                            hasHMS: moduleKeys.includes('hms')
-                        };
+                    return {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role,
+                        isAdmin: user.is_admin,
+                        isTenantAdmin: user.is_tenant_admin,
+                        tenantId: user.tenant_id,
+                        companyId: user.company_id,
+                        companyName: company?.name || tenantInfo?.name || 'My Business',
+                        current_branch_id: user.current_branch_id,
+                        current_branch_name: branchName,
+                        modules: moduleKeys,
+                        image: safeImage,
+                        dbUrl: (tenantInfo as any)?.db_url,
+                        currencyCode: (company as any)?.company_settings?.currencies?.code || 'INR',
+                        currencySymbol: (company as any)?.company_settings?.currencies?.symbol || '₹',
+                        industry: (company as any)?.industry || 'General',
+                        hasCRM: moduleKeys.includes('crm'),
+                        hasHMS: moduleKeys.includes('hms')
+                    };
+
                     } catch (enrichError) {
                         console.error("[AUTH] Enrichment error:", enrichError);
                         // Fallback to basic user if enhancement fails

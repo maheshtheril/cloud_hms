@@ -4,28 +4,27 @@ import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
   const connectionString = process.env.DATABASE_URL || 'postgresql://hms_admin:password@127.0.0.1:5432/hms_prod';
-  const host = connectionString.split('@')[1]?.split('/')[0] || "Unknown Host";
+  const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
 
-  console.log(`\x1b[36m[PRISMA] Initializing PG Pool for: ${host}\x1b[0m`);
-
+  // [PERFORMANCE] Serverless-optimized pool settings for Vercel + Neon
+  // max: 3 is correct for serverless (each lambda gets its own pool)
+  // keepAlive prevents TCP timeout on idle connections, reducing Neon cold-starts
   const pool = new Pool({
     connectionString,
-    connectionTimeoutMillis: 10000, // 10s wait for Neon wake-up
-    idleTimeoutMillis: 30000,
-    max: 20, // Concurrency limit
-    ssl: connectionString.includes('localhost') || connectionString.includes('127.0.0.1')
-      ? false
-      : { rejectUnauthorized: false }
+    connectionTimeoutMillis: 5000,  // Reduced from 10s — fail fast, don't hang the user
+    idleTimeoutMillis: 10000,       // Release idle connections quickly
+    max: 3,                         // Reduced from 20 — serverless doesn't need large pools
+    keepAlive: true,                // Keeps TCP connection warm to reduce Neon wake-up time
+    ssl: isLocal ? false : { rejectUnauthorized: false }
   });
 
-  pool.on('error', (err: any) => console.error('\x1b[31m[PRISMA] Pool Event Error:\x1b[0m', err));
-  pool.on('connect', () => console.log('\x1b[32m[PRISMA] New client connected to pool\x1b[0m'));
+  pool.on('error', (err: any) => console.error('\x1b[31m[PRISMA] Pool Error:\x1b[0m', err.message));
 
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
     adapter,
-    log: ['error', 'warn'],
+    log: ['error'],
   });
 };
 
