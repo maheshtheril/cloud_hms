@@ -128,31 +128,46 @@ export async function getBillableItems() {
         const itemIds = items.map(i => i.id);
 
         // PROCUREMENT SYNC: Find the absolute latest purchase records (Invoices or Receipts)
-        const lastInvoiceEntries = await prisma.hms_purchase_invoice_line.findMany({
-            where: {
-                product_id: { in: itemIds },
-                tenant_id: session.user.tenantId,
-                hms_purchase_invoice: {
-                    status: { in: ['posted', 'finalized', 'paid', 'draft', 'approved'] }
-                }
-            },
-            orderBy: { created_at: 'desc' },
+        const [lastInvoiceEntries, lastReceiptEntries, taxMaps] = await Promise.all([
+            prisma.hms_purchase_invoice_line.findMany({
+                where: {
+                    product_id: { in: itemIds },
+                    tenant_id: session.user.tenantId,
+                    hms_purchase_invoice: {
+                        status: { in: ['posted', 'finalized', 'paid', 'draft', 'approved'] }
+                    }
+                },
+                orderBy: { created_at: 'desc' },
+            }),
+            prisma.hms_purchase_receipt_line.findMany({
+                where: {
+                    product_id: { in: itemIds },
+                    tenant_id: session.user.tenantId
+                },
+                orderBy: { created_at: 'desc' }
+            }),
+            prisma.company_tax_maps.findMany({
+                where: { company_id: companyId },
+                include: { tax_rates: true }
+            })
+        ]);
+
+        // [OPTIMIZATION] Create O(1) Lookups for procurement data
+        const invoiceMap = new Map();
+        lastInvoiceEntries.forEach(entry => {
+            if (!invoiceMap.has(entry.product_id)) invoiceMap.set(entry.product_id, entry);
         });
 
-        const lastReceiptEntries = await prisma.hms_purchase_receipt_line.findMany({
-            where: {
-                product_id: { in: itemIds },
-                tenant_id: session.user.tenantId
-            },
-            orderBy: { created_at: 'desc' }
+        const receiptMap = new Map();
+        lastReceiptEntries.forEach(entry => {
+            if (!receiptMap.has(entry.product_id)) receiptMap.set(entry.product_id, entry);
         });
 
-        // Pre-fetch company tax rates to resolve IDs from rates if needed
-        const taxMaps = await prisma.company_tax_maps.findMany({
-            where: { company_id: companyId },
-            include: { tax_rates: true }
-        });
+        // [OPTIMIZATION] Pre-fetch company tax rates to resolve IDs from rates if needed
         const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+        const rateToIdMap = new Map(companyTaxRates.map(tr => [Number(tr.rate), tr.id]));
+        const idToRateObjMap = new Map(companyTaxRates.map(tr => [tr.id, tr]));
+        
         const defaultTaxId = taxMaps.find(m => m.is_default)?.tax_rate_id || null;
 
         const flatItems = items.map((item) => {
@@ -161,9 +176,9 @@ export async function getBillableItems() {
             const category = categoryRel?.hms_product_category;
             const productTaxRule = item.product_tax_rules?.[0];
 
-            // 1. Resolve newest procurement record with reliable date comparison
-            const piLine = lastInvoiceEntries.find(pi => pi.product_id === item.id);
-            const receiptLine = lastReceiptEntries.find(rl => rl.product_id === item.id);
+            // 1. Resolve newest procurement record with reliable date comparison (O(1) lookup)
+            const piLine = invoiceMap.get(item.id);
+            const receiptLine = receiptMap.get(item.id);
             const poLine = item.hms_purchase_order_line?.[0];
 
             const dateRank = [
@@ -192,10 +207,7 @@ export async function getBillableItems() {
 
             // CRITICAL: If we have a purchase rate but no ID, resolve the ID from company settings
             if (!purchaseTaxId && purchaseTaxRate > 0) {
-                const matchedRate = companyTaxRates.find(tr => Number(tr.rate) === purchaseTaxRate);
-                if (matchedRate) {
-                    purchaseTaxId = matchedRate.id;
-                }
+                purchaseTaxId = rateToIdMap.get(purchaseTaxRate) || null;
             }
 
             // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Product Metadata > Category Default
@@ -207,9 +219,9 @@ export async function getBillableItems() {
                 category?.default_tax_rate_id ||
                 null;
 
-            // Resolve final numerical rate
+            // Resolve final numerical rate using O(1) map
             let finalTaxRate = 0;
-            const resolvedRateObj = companyTaxRates.find(tr => tr.id === finalTaxId);
+            const resolvedRateObj = finalTaxId ? idToRateObjMap.get(finalTaxId) : null;
 
             if (resolvedRateObj) {
                 finalTaxRate = Number(resolvedRateObj.rate);
@@ -228,9 +240,8 @@ export async function getBillableItems() {
 
                 if (fallbackRate > 0) {
                     finalTaxRate = fallbackRate;
-                    // RE-RESOLVE ID: Find matching ID by rate in company settings
-                    const matchedId = companyTaxRates.find(tr => Math.abs(Number(tr.rate) - fallbackRate) < 0.01)?.id;
-                    if (matchedId) finalTaxId = matchedId;
+                    // RE-RESOLVE ID: Find matching ID by rate in company settings (O(1) lookup)
+                    finalTaxId = rateToIdMap.get(fallbackRate) || null;
                 }
             }
 

@@ -1049,6 +1049,7 @@ model hms_appointments {
   @@index([patient_id], map: "idx_hms_appointments_patient")
   @@index([tenant_id, starts_at], map: "idx_hms_appointments_tenant_starts_at")
   @@index([tenant_id, status], map: "idx_hms_appointments_tenant_status")
+  @@index([company_id, starts_at], map: "idx_hms_appointments_company_starts_at")
 }
 
 model hms_bed {
@@ -1125,6 +1126,9 @@ model hms_clinicians {
   hms_appointments           hms_appointments[]
   hms_roles                  hms_roles?           @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_specializations        hms_specializations? @relation(fields: [specialization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tenant_id, is_active])
+  @@index([company_id])
 }
 
 model hms_credit_note {

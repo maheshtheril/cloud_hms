@@ -7,14 +7,14 @@ import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/bi
 
 export const dynamic = 'force-dynamic'
 
-// [WORLD-CLASS SERIALIZATION] Recursively convert Prisma.Decimal or any non-serializable numeric objects to standard numbers
+// [OPTIMIZED SERIALIZATION] Standard serializable types handled efficiently
 function serialize(obj: any): any {
     if (obj === null || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) return obj.map(serialize);
     if (obj instanceof Date) return obj;
 
     // Prisma Decimals usually have a toJSON or toNumber method
-    if (obj.constructor && obj.constructor.name === 'Decimal' && typeof obj.toNumber === 'function') {
+    if (typeof obj.toNumber === 'function') {
         return obj.toNumber();
     }
 
@@ -111,7 +111,7 @@ export default async function ReceptionDashboardPage() {
             }),
             prisma.hms_patient.findMany({
                 where: { tenant_id: tenantId },
-                take: 100,
+                take: 20, // Reduced from 100 for performance
                 orderBy: { created_at: 'desc' },
                 select: {
                     id: true,
