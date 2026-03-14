@@ -750,11 +750,12 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
             if (paymentList.length > 0) {
                 await tx.hms_invoice_payments.createMany({
                     data: paymentList.map((p: any) => ({
-                        tenant_id: session.user.tenantId,
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
                         company_id: companyId,
                         invoice_id: invoiceId,
-                        amount: Number(p.amount),
-                        method: p.method,
+                        amount: safeNum(p.amount),
+                        method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
                         payment_reference: p.reference || null,
                         paid_at: new Date()
                     }))
@@ -1094,11 +1095,12 @@ export async function settlePatientDues(patientId: string, amount: number, metho
                 // Create Payment Record
                 const payment = await tx.hms_invoice_payments.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: session.user.tenantId,
                         company_id: companyId,
                         invoice_id: inv.id,
                         amount: payAmount,
-                        method: method as any, // Cast to enum
+                        method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(method) ? method : 'cash') as any,
                         payment_reference: reference || `Settlement-${new Date().getTime()}`,
                         paid_at: new Date()
                     }
