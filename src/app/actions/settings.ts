@@ -1027,9 +1027,19 @@ export async function updateWhatsAppSettings(data: {
 }
 
 export async function getWhatsAppConfig(companyId: string, tenantId: string) {
-    const record = await prisma.hms_settings.findFirst({
+    noStore();
+    // 1. Specific Company Lookup
+    let record = await prisma.hms_settings.findFirst({
         where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
     });
+
+    // 2. Tenant Fallback
+    if (!record) {
+        record = await prisma.hms_settings.findFirst({
+            where: { tenant_id: tenantId, key: 'whatsapp_config' }
+        });
+    }
+
     return (record?.value as any) || null;
 }
 

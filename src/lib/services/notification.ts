@@ -301,32 +301,52 @@ export class NotificationService {
 
     /**
      * INTERNAL: Resolves the best WhatsApp configuration available.
-     * Priority: Dynamic Settings (DB) > Environment Variables
+     * Priority: Dynamic Settings (DB) > Environment Variables (Only if not a specific tenant)
      */
     private static async getDynamicConfig(companyId: string, tenantId: string) {
+        const logPrefix = `[WhatsApp-Config][Co:${companyId.slice(0, 4)}][Te:${tenantId.slice(0, 4)}]`;
         try {
+            console.log(`${logPrefix} Resolving configuration...`);
             const dbConfig = await getWhatsAppConfig(companyId, tenantId);
 
-            // If DB config exists and is enabled, use it.
-            // Even if disabled, we return it to respect the "Admin Kill Switch"
             if (dbConfig) {
+                const hasToken = !!dbConfig.token;
+                console.log(`${logPrefix} Found DB config. Enabled: ${dbConfig.enabled}, Instance: ${dbConfig.instanceId}, TokenPresent: ${hasToken}`);
+                
                 return {
                     enabled: dbConfig.enabled ?? false,
                     instanceId: dbConfig.instanceId || '',
                     token: dbConfig.token || '',
-                    autoSendBill: dbConfig.autoSendBill ?? false
+                    autoSendBill: dbConfig.autoSendBill ?? false,
+                    source: 'database'
                 };
             }
+            console.log(`${logPrefix} No DB config found.`);
         } catch (err) {
-            console.error("[NotificationService] Dynamic config fetch failed:", err);
+            console.error(`${logPrefix} Dynamic config fetch failed:`, err);
         }
 
-        // Fallback to Environment Variables
+        // Fallback to Environment Variables ONLY if we don't have a clear tenant context or as a last resort
+        // In SaaS, we should be careful about using system tokens for tenant messages.
+        const envToken = process.env.WHATSAPP_TOKEN;
+        if (envToken && envToken.length > 5) {
+            console.log(`${logPrefix} Falling back to System Environment Variables.`);
+            return {
+                enabled: true,
+                instanceId: process.env.WHATSAPP_INSTANCE_ID || '',
+                token: envToken,
+                autoSendBill: false,
+                source: 'env'
+            };
+        }
+
+        console.warn(`${logPrefix} No configuration source available.`);
         return {
-            enabled: !!process.env.WHATSAPP_TOKEN, // Enable if token exists in ENV
-            instanceId: process.env.WHATSAPP_INSTANCE_ID || '',
-            token: process.env.WHATSAPP_TOKEN || '',
-            autoSendBill: false
+            enabled: false,
+            instanceId: '',
+            token: '',
+            autoSendBill: false,
+            source: 'none'
         };
     }
 }
