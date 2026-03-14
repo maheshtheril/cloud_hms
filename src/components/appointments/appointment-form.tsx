@@ -539,48 +539,48 @@ export function AppointmentForm({
                                 printHtml(`<!DOCTYPE html><html><head><title>OP Slip - ${patientName}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 1.5cm; }
-  @media print { @page { margin: 0; size: A4; } body { padding: 1.5cm; } }
-  .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
-  .header img { height: 64px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
-  .header h1 { font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; }
-  .header p { font-size: 12px; color: #4a5568; margin-top: 3px; }
-  .slip { border: 2px solid #000; border-radius: 8px; overflow: hidden; }
-  .slip-top { display: flex; align-items: stretch; border-bottom: 2px solid #000; }
-  .patient-block { flex: 1; padding: 16px 20px; border-right: 2px solid #000; }
-  .token-block { width: 140px; padding: 16px 20px; text-align: center; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .lbl { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #718096; display: block; margin-bottom: 3px; }
-  .val-lg { font-size: 20px; font-weight: 900; color: #1a202c; line-height: 1.1; }
-  .val-sm { font-size: 12px; font-weight: 700; color: #4a5568; margin-top: 3px; }
-  .token-num { font-size: 38px; font-weight: 900; color: #1a202c; letter-spacing: -2px; line-height: 1; }
-  .slip-bottom { display: grid; grid-template-columns: 1fr 1fr; }
-  .info-cell { padding: 14px 20px; }
-  .info-cell:first-child { border-right: 2px solid #000; }
-  .val-md { font-size: 15px; font-weight: 900; color: #1a202c; }
+  body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 2cm; }
+  @media print { @page { margin: 0; size: A4; } body { padding: 2cm; } }
+  .header { text-align: center; border-bottom: 1px solid #cbd5e0; padding-bottom: 14px; margin-bottom: 24px; }
+  .header img { height: 56px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
+  .header h1 { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+  .header p { font-size: 11px; color: #718096; margin-top: 4px; }
+  .slip { background: #f7fafc; border-radius: 10px; padding: 20px 24px; }
+  .slip-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .token-box { text-align: right; }
+  .lbl { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #a0aec0; display: block; margin-bottom: 4px; }
+  .patient-name { font-size: 22px; font-weight: 900; color: #1a202c; line-height: 1; }
+  .patient-meta { font-size: 11px; font-weight: 600; color: #718096; margin-top: 5px; }
+  .token-num { font-size: 26px; font-weight: 900; color: #1a202c; line-height: 1; }
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+  .info-row { display: flex; gap: 40px; }
+  .info-block { flex: 1; }
+  .val-md { font-size: 14px; font-weight: 900; color: #1a202c; margin-top: 3px; }
 </style></head><body>
 <div class="header">
   ${logo ? `<img src="${logo}" />` : ''}
-  <h1>${hospName}</h1>
+  ${hospName ? `<h1>${hospName}</h1>` : ''}
   ${hospAddress ? `<p>${hospAddress}${hospPhone ? ' | ' + hospPhone : ''}</p>` : ''}
 </div>
 <div class="slip">
-  <div class="slip-top">
-    <div class="patient-block">
+  <div class="slip-row">
+    <div>
       <span class="lbl">Patient Name</span>
-      <div class="val-lg">${patientName}</div>
-      <div class="val-sm">ID: ${appt.patient?.patient_number || 'N/A'}&nbsp;&nbsp;|&nbsp;&nbsp;${appt.patient?.gender || ''}</div>
+      <div class="patient-name">${patientName}</div>
+      <div class="patient-meta">ID: ${appt.patient?.patient_number || 'N/A'} &nbsp;|&nbsp; ${appt.patient?.gender || ''}</div>
     </div>
-    <div class="token-block">
+    <div class="token-box">
       <span class="lbl">Token</span>
       <div class="token-num">${tokenNumber}</div>
     </div>
   </div>
-  <div class="slip-bottom">
-    <div class="info-cell">
+  <hr class="divider" />
+  <div class="info-row">
+    <div class="info-block">
       <span class="lbl">Consulting Doctor</span>
       <div class="val-md">${doctorName}</div>
     </div>
-    <div class="info-cell">
+    <div class="info-block">
       <span class="lbl">Date &amp; Time</span>
       <div class="val-md">${date} &nbsp; ${time}</div>
     </div>
