@@ -3,17 +3,31 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getWhatsAppSettings } from "@/app/actions/settings";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
+    console.log("[DEBUG-API] Triggered");
     const session = await auth();
+    const result: any = {
+        success: true,
+        timestamp: new Date().toISOString(),
+        session: {
+            tenantId: session?.user?.tenantId,
+            companyId: session?.user?.companyId,
+            userId: session?.user?.id
+        }
+    };
+
     try {
         const tenantId = session?.user?.tenantId;
         const companyId = session?.user?.companyId;
 
-        const allSettings = await prisma.hms_settings.findMany({
+        // 1. Raw DB Dump
+        const allRecords = await prisma.hms_settings.findMany({
             where: { key: 'whatsapp_config' }
         });
         
-        const data = allSettings.map(s => ({
+        result.db_records = allRecords.map(s => ({
             id: s.id,
             company_id: s.company_id,
             tenant_id: s.tenant_id,
@@ -23,23 +37,25 @@ export async function GET() {
             is_active: s.is_active
         }));
 
-        let settingsTest = null;
+        // 2. Fetcher Test
+        result.fetcher_test = {
+            ids_used: { companyId, tenantId },
+            result: null,
+            error: null
+        };
+
         if (tenantId && companyId) {
-            settingsTest = await getWhatsAppSettings(companyId, tenantId);
+            try {
+                result.fetcher_test.result = await getWhatsAppSettings(companyId, tenantId);
+            } catch (err: any) {
+                result.fetcher_test.error = err.message;
+            }
+        } else {
+            result.fetcher_test.error = "Missing IDs in session";
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            session: {
-                tenantId,
-                companyId,
-                userId: session?.user?.id
-            },
-            settingsTest,
-            count: allSettings.length, 
-            data 
-        });
+        return NextResponse.json(result);
     } catch (e: any) {
-        return NextResponse.json({ success: false, error: e.message });
+        return NextResponse.json({ success: false, error: e.message, stack: e.stack });
     }
 }
