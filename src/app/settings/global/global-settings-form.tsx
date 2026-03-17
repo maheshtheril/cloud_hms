@@ -40,6 +40,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
     const [tenantLogoUrl, setTenantLogoUrl] = useState(tenant?.logo_url || '')
     const [dbUrl, setDbUrl] = useState(tenant?.db_url || '')
     const [registrationEnabled, setRegistrationEnabled] = useState((tenant?.metadata as any)?.registration_enabled !== false)
+    const [dateFormat, setDateFormat] = useState((tenant?.metadata as any)?.date_format || 'PPP')
+    const [roundingPrecision, setRoundingPrecision] = useState(company.company_settings?.rounding_precision ?? 2)
 
     // Contact Info (stored in metadata)
     const meta = (company.metadata as any) || {}
@@ -74,6 +76,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
         setAppName(tenant?.app_name || tenant?.name || '')
         setTenantLogoUrl(tenant?.logo_url || '')
         setDbUrl(tenant?.db_url || '')
+        setDateFormat((tenant?.metadata as any)?.date_format || 'PPP')
+        setRoundingPrecision(company.company_settings?.rounding_precision ?? 2)
 
         const m = (company.metadata as any) || {}
         setAddress(m.address || '')
@@ -120,11 +124,13 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                     phone,
                     email,
                     gstin,
-                    invoicePrefix
+                    invoicePrefix,
+                    roundingPrecision: Number(roundingPrecision)
                 }),
                 updateWhatsAppSettings({
                     enabled: whatsappEnabled,
                     instanceId: whatsappInstanceId,
+                    provider: 'ultramsg',
                     token: whatsappToken || undefined,
                     autoSendBill: whatsappAutoSendBill,
                     companyId: company.id
@@ -146,7 +152,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                     appName,
                     logoUrl: tenantLogoUrl,
                     dbUrl: dbUrl || undefined,
-                    registrationEnabled
+                    registrationEnabled,
+                    dateFormat
                 });
                 if (!res.success) {
                     tenantResult = { success: false, error: res.error || 'Failed to update tenant branding' };
@@ -390,8 +397,16 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice Prefix</Label>
-                            <Input value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value.toUpperCase())} maxLength={5} className="font-black rounded-xl" />
+                            <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rounding Precision (Decimals)</Label>
+                            <Input 
+                                type="number" 
+                                min="0" 
+                                max="4" 
+                                value={roundingPrecision} 
+                                onChange={e => setRoundingPrecision(parseInt(e.target.value))} 
+                                className="font-black rounded-xl" 
+                            />
+                            <p className="text-[9px] text-slate-400 italic">Example: 2 =&gt; 10.00, 0 =&gt; 10</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -405,11 +420,23 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Portal Name</Label>
-                                <Input value={appName} onChange={e => setAppName(e.target.value)} placeholder="e.g. My HMS" className="font-bold rounded-xl" />
+                             <FileUpload label="Portal Logo" folder="tenant-logos" accept="image/*" currentFileUrl={tenantLogoUrl} onUploadComplete={(url) => setTenantLogoUrl(url)} />
+                             
+                             <div className="space-y-2 pt-2">
+                                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Date Format</Label>
+                                <Select value={dateFormat} onValueChange={setDateFormat}>
+                                    <SelectTrigger className="font-bold rounded-xl">
+                                        <SelectValue placeholder="Select date format" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="PPP">Default (e.g. May 24th, 2024)</SelectItem>
+                                        <SelectItem value="dd/MM/yyyy">European (24/05/2024)</SelectItem>
+                                        <SelectItem value="MM/dd/yyyy">US (05/24/2024)</SelectItem>
+                                        <SelectItem value="yyyy-MM-dd">ISO (2024-05-24)</SelectItem>
+                                        <SelectItem value="dd MMM yyyy">Short Month (24 May 2024)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <FileUpload label="Portal Logo" folder="tenant-logos" accept="image/*" currentFileUrl={tenantLogoUrl} onUploadComplete={(url) => setTenantLogoUrl(url)} />
                         </CardContent>
                     </Card>
                 )}
