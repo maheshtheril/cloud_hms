@@ -1022,7 +1022,7 @@ model hms_appointments {
   room_id           String?             @db.Uuid
   starts_at         DateTime            @db.Timestamptz(6)
   ends_at           DateTime            @db.Timestamptz(6)
-  duration_minutes  Int?                @default(dbgenerated("((EXTRACT(epoch FROM (ends_at - starts_at)) / (60)::numeric))::integer"))
+  duration_minutes  Int?
   status            String              @default("scheduled")
   type              String?             @default("consultation")
   mode              String?             @default("in_person")
@@ -1658,7 +1658,7 @@ model hms_patient {
   merged_into       String?             @db.Uuid
   source_system     String?
   updated_by        String?             @db.Uuid
-  full_name         String?             @default(dbgenerated("TRIM(BOTH ' '::text FROM ((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)))"))
+  full_name         String?
   profile_image_url String?
   blood_group       String?
   accounting_group  String?             @default("general")

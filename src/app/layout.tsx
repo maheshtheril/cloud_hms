@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider } from "@/components/auth-provider";
+import { LocalizationProvider } from "@/contexts/localization-context";
 
 // Force dynamic rendering for all pages to prevent build-time database access
 export const dynamic = 'force-dynamic'
@@ -81,10 +82,12 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider>
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          <LocalizationProvider>
+            <ThemeProvider>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </LocalizationProvider>
         </AuthProvider>
       </body>
     </html>

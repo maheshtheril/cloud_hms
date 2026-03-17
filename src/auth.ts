@@ -58,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             : Promise.resolve(null),
                         // Tenant details
                         user.tenant_id
-                            ? prisma.tenant.findUnique({ where: { id: user.tenant_id }, select: { db_url: true, slug: true, name: true } })
+                            ? prisma.tenant.findUnique({ where: { id: user.tenant_id }, select: { db_url: true, slug: true, name: true, metadata: true } })
                             : Promise.resolve(null),
                         // Company + currency
                         user.company_id
@@ -108,6 +108,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         dbUrl: (tenantInfo as any)?.db_url,
                         currencyCode: (company as any)?.company_settings?.currencies?.code || 'INR',
                         currencySymbol: (company as any)?.company_settings?.currencies?.symbol || '₹',
+                        dateFormat: (tenantInfo?.metadata as any)?.date_format || 'dd/MM/yyyy',
+                        precision: (company as any)?.company_settings?.rounding_precision ?? 2,
                         industry: (company as any)?.industry || 'General',
                         hasCRM: moduleKeys.includes('crm'),
                         hasHMS: moduleKeys.includes('hms')
@@ -155,6 +157,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.current_branch_name = u.current_branch_name;
                 token.currencyCode = u.currencyCode;
                 token.currencySymbol = u.currencySymbol;
+                token.dateFormat = u.dateFormat;
+                token.precision = u.precision;
             }
             if (trigger === "update" && session) {
                 if (session.companyId) token.companyId = session.companyId;
@@ -181,6 +185,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 u.current_branch_name = token.current_branch_name;
                 u.currencyCode = token.currencyCode;
                 u.currencySymbol = token.currencySymbol;
+                u.dateFormat = token.dateFormat;
+                u.precision = token.precision;
             }
             return session;
         }

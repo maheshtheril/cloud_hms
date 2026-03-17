@@ -102,7 +102,8 @@ export async function updateGlobalSettings(data: {
     phone?: string,
     email?: string,
     gstin?: string,
-    invoicePrefix?: string
+    invoicePrefix?: string,
+    roundingPrecision?: number
 }) {
 
     const session = await auth();
@@ -152,7 +153,8 @@ export async function updateGlobalSettings(data: {
                     where: { id: existingSettings.id },
                     data: {
                         currency_id: data.currencyId,
-                        numbering_prefix: data.invoicePrefix
+                        numbering_prefix: data.invoicePrefix,
+                        rounding_precision: data.roundingPrecision
                     }
                 });
             } else {
@@ -162,7 +164,8 @@ export async function updateGlobalSettings(data: {
                         tenant_id: session.user.tenantId!,
                         company_id: data.companyId,
                         currency_id: data.currencyId,
-                        numbering_prefix: data.invoicePrefix || 'INV'
+                        numbering_prefix: data.invoicePrefix || 'INV',
+                        rounding_precision: data.roundingPrecision || 2
                     }
                 });
             }
@@ -183,7 +186,8 @@ export async function updateTenantSettings(data: {
     appName: string,
     logoUrl?: string,
     dbUrl?: string,
-    registrationEnabled?: boolean
+    registrationEnabled?: boolean,
+    dateFormat?: string
 }) {
     const session = await auth();
     if (!session?.user?.id || !session.user.isTenantAdmin) {
@@ -210,7 +214,10 @@ export async function updateTenantSettings(data: {
                 app_name: data.appName,
                 logo_url: data.logoUrl,
                 db_url: data.dbUrl,
-                metadata: updatedMeta
+                metadata: {
+                    ...updatedMeta,
+                    date_format: data.dateFormat || updatedMeta.date_format || 'dd/MM/yyyy'
+                }
             }
         });
 
@@ -942,6 +949,7 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
             success: true,
             settings: {
                 enabled: data.enabled ?? false,
+                provider: data.provider ?? 'ultramsg',
                 instanceId: data.instanceId ?? '',
                 hasToken: hasToken,
                 autoSendBill: data.autoSendBill ?? false,
@@ -954,6 +962,7 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
 
 export async function updateWhatsAppSettings(data: {
     enabled: boolean;
+    provider: 'ultramsg' | 'evolution';
     instanceId: string;
     token?: string;
     autoSendBill: boolean;
@@ -994,6 +1003,7 @@ export async function updateWhatsAppSettings(data: {
 
         const configValue = {
             enabled: data.enabled,
+            provider: data.provider || 'ultramsg',
             instanceId: formattedInstanceId,
             token: (data.token && data.token.trim() !== '')
                 ? data.token.trim()

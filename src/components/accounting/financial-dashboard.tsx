@@ -10,6 +10,7 @@ import {
     ChevronRight, CreditCard, Banknote, History,
     FileText
 } from 'lucide-react'
+import { useLocalization } from '@/contexts/localization-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -35,12 +36,13 @@ const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.Cartesian
 const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false })
 
 function CountUp({ value, prefix = "", suffix = "" }: { value: number, prefix?: string, suffix?: string }) {
+    const { formatNumber } = useLocalization();
     return (
         <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
         >
-            {prefix}{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value)}{suffix}
+            {prefix}{formatNumber(value, 0)}{suffix}
         </motion.span>
     )
 }
@@ -90,13 +92,7 @@ export function FinancialDashboard({
         setLoading(false)
     }
 
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat(currencyCode === 'INR' ? 'en-IN' : 'en-US', {
-            style: 'currency',
-            currency: currencyCode,
-            maximumFractionDigits: 0
-        }).format(val)
-    }
+    const { formatDate, formatCurrency } = useLocalization()
 
     if (loading && !dailyData) {
         return (
@@ -155,7 +151,7 @@ export function FinancialDashboard({
                 <div className="flex flex-wrap items-center gap-3 relative z-10">
                     <Button variant="outline" className="h-12 px-6 rounded-xl border-slate-200 dark:border-slate-800 gap-2 hover:bg-slate-50 transition-all font-semibold">
                         <Calendar className="h-5 w-5 text-indigo-500" />
-                        {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        {formatDate(date, 'MMMM yyyy')}
                     </Button>
                     <Button className="h-12 px-8 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:opacity-90 transition-all gap-2 font-bold shadow-xl shadow-slate-900/10 dark:shadow-white/5">
                         <Download className="h-5 w-5" /> Executive Report

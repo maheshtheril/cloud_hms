@@ -16,6 +16,8 @@ declare module "next-auth" {
             dbUrl?: string | null
             currencyCode?: string | null
             currencySymbol?: string | null
+            dateFormat?: string | null
+            precision?: number | null
         } & DefaultSession["user"]
     }
 
@@ -33,6 +35,8 @@ declare module "next-auth" {
         dbUrl?: string | null
         currencyCode?: string | null
         currencySymbol?: string | null
+        dateFormat?: string | null
+        precision?: number | null
     }
 }
 
@@ -51,5 +55,7 @@ declare module "next-auth/jwt" {
         dbUrl?: string | null
         currencyCode?: string | null
         currencySymbol?: string | null
+        dateFormat?: string | null
+        precision?: number | null
     }
 }

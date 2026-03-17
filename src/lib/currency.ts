@@ -1,5 +1,4 @@
-import { prisma } from '@/lib/prisma'
-import { auth } from '@/auth'
+import { formatCurrencyWithSymbol, DEFAULT_PRECISION } from './format-utils';
 import {
     CURRENCY_SYMBOLS,
     CURRENCY_CODES,
@@ -32,8 +31,13 @@ export function getCurrencyCode(countryCode: string): string {
  * Format amount with currency symbol
  * @param amount Number to format
  * @param currencyOrCountry Code (e.g. 'INR', 'USD', 'IN', 'US')
+ * @param precision Number of decimal places
  */
-export function formatCurrency(amount: number, currencyOrCountry: string = 'USD'): string {
+export function formatCurrency(
+    amount: number, 
+    currencyOrCountry: string = 'USD', 
+    precision: number = DEFAULT_PRECISION
+): string {
     let symbol = '$';
     const code = currencyOrCountry?.toUpperCase();
 
@@ -47,24 +51,12 @@ export function formatCurrency(amount: number, currencyOrCountry: string = 'USD'
     else if (code === 'CAD' || code === 'CA') symbol = 'C$';
     else symbol = CURRENCY_SYMBOLS[code] || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
-    const formatted = amount.toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    if (symbol.length === 1 || symbol === 'A$' || symbol === 'C$' || symbol === 'S$') {
-        return `${symbol}${formatted}`;
-    } else {
-        return `${formatted} ${symbol}`;
-    }
+    return formatCurrencyWithSymbol(amount, symbol, precision);
 }
 
 /**
  * Format amount for Indian market specifically
  */
-export function formatINR(amount: number): string {
-    return `₹${amount.toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    })}`;
+export function formatINR(amount: number, precision: number = DEFAULT_PRECISION): string {
+    return formatCurrencyWithSymbol(amount, '₹', precision);
 }
