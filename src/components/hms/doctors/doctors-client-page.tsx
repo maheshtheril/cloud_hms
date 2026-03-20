@@ -2,9 +2,8 @@
 // Force rebuild - badge refinements
 import { useState } from 'react'
 import Link from "next/link"
-import { Stethoscope, Plus, Users, Award, TrendingUp, Sparkles, Mail, Phone, Shield, Search } from "lucide-react"
+import { Stethoscope, Plus, Users, Award, TrendingUp, Sparkles, Mail, Phone, Shield, Search, Building2 } from "lucide-react"
 import { AddDoctorDialog } from "@/components/hms/doctors/add-doctor-dialog"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete-button"
 
 interface Doctor {
@@ -70,9 +69,6 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                 {/* Standard Enterprise Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
-                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-                        </div>
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
                                 Staff Directory <span className="text-xs text-red-500">[v2.0]</span>

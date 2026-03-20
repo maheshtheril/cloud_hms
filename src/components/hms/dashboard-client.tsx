@@ -9,7 +9,6 @@ import {
 } from "lucide-react"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface DashboardClientProps {
     user: any
@@ -38,14 +37,6 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-4">
-                            {(dashboardTitle.toLowerCase().includes('ziona') ||
-                                dashboardTitle.toLowerCase().includes('cloud hms') ||
-                                tenant?.app_name === 'Ziona ERP' ||
-                                process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA') ? (
-                                <div className="h-10 w-10 bg-black rounded-lg flex items-center justify-center shadow-xl shadow-indigo-500/10 border border-white/5 shrink-0">
-                                    <ZionaLogo size={32} variant="icon" speed="slow" colorScheme="signature" />
-                                </div>
-                            ) : null}
                             <div>
                                 <h1 className="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent tracking-tighter leading-tight">
                                     {dashboardTitle}

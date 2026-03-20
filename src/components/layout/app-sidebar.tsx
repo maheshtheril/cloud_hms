@@ -162,29 +162,20 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            {tenant?.app_name?.toLowerCase().includes('ziona') ||
-                                currentCompany?.name?.toLowerCase().includes('ziona') ||
-                                tenant?.app_name?.toLowerCase().includes('cloud hms') ||
-                                process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA' ? (
-                                <ZionaLogo size={32} theme={theme} colorScheme="signature" />
-                            ) : (
-                                <>
-                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
-                                        {currentCompany?.logo_url ? (
-                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain p-1" />
-                                        ) : tenant?.logo_url ? (
-                                            <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
-                                        ) : (
-                                            <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 w-full h-full flex items-center justify-center">
-                                                <Activity className="text-white h-4 w-4" />
-                                            </div>
-                                        )}
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
+                                {currentCompany?.logo_url ? (
+                                    <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain p-1" />
+                                ) : tenant?.logo_url ? (
+                                    <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
+                                ) : (
+                                    <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 w-full h-full flex items-center justify-center">
+                                        <Activity className="text-white h-4 w-4" />
                                     </div>
-                                    <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
-                                        {tenant?.app_name || tenant?.name || "Enterprise"}
-                                    </span>
-                                </>
-                            )}
+                                )}
+                            </div>
+                            <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
+                                {tenant?.app_name || tenant?.name || "Enterprise"}
+                            </span>
                         </div>
                     </div>
                     <Avatar className="h-9 w-9 border-2 border-white dark:border-zinc-800 shadow-sm">

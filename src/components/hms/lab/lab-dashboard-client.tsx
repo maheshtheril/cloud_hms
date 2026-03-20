@@ -9,7 +9,6 @@ import {
     ArrowRight, Check, Loader2, X, IndianRupee
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
@@ -104,9 +103,6 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                 {/* HEADER */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 bg-black rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
-                            <ZionaLogo size={40} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-                        </div>
                         <div>
                             <motion.h1
                                 initial={{ opacity: 0, x: -20 }}

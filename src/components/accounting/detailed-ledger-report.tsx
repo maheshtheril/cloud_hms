@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { getDaybook, getCashBankBook, getCategoryAccounts } from "@/app/actions/accounting/reports"
-import { ZionaLogo } from '@/components/branding/ziona-logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import React from 'react'

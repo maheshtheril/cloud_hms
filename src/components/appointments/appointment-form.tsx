@@ -8,7 +8,6 @@ import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
 import { getCurrentCompany } from "@/app/actions/company"
@@ -541,51 +540,70 @@ export function AppointmentForm({
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: white; color: #1a202c; padding: 2cm; }
   @media print { @page { margin: 0; size: A4; } body { padding: 2cm; } }
-  .header { text-align: center; border-bottom: 1px solid #cbd5e0; padding-bottom: 14px; margin-bottom: 24px; }
-  .header img { height: 56px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto; }
-  .header h1 { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-  .header p { font-size: 11px; color: #718096; margin-top: 4px; }
-  .slip { background: #f7fafc; border-radius: 10px; padding: 20px 24px; }
-  .slip-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px; }
+  .header-left { display: flex; align-items: center; gap: 15px; }
+  .header-logo { height: 60px; width: 60px; object-fit: contain; }
+  .header-info h1 { font-size: 18px; font-weight: 700; text-transform: uppercase; color: #1a202c; margin: 0 0 2px 0; }
+  .header-info p { font-size: 10px; color: #64748b; font-weight: 500; margin: 0; }
+  .header-right { text-align: right; }
+  .header-right p { margin: 0; font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+  .slip { background: #f8fafc; border-radius: 8px; padding: 15px 20px; border: 1px solid #f1f5f9; }
+  .slip-row { display: flex; justify-content: space-between; align-items: center; }
   .token-box { text-align: right; }
-  .lbl { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: #a0aec0; display: block; margin-bottom: 4px; }
-  .patient-name { font-size: 22px; font-weight: 900; color: #1a202c; line-height: 1; }
-  .patient-meta { font-size: 11px; font-weight: 600; color: #718096; margin-top: 5px; }
-  .token-num { font-size: 26px; font-weight: 900; color: #1a202c; line-height: 1; }
-  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
-  .info-row { display: flex; gap: 40px; }
+  .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 2px; }
+  .patient-name { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+  .patient-meta { font-size: 11px; font-weight: 500; color: #64748b; margin-top: 2px; }
+  .token-num { font-size: 24px; font-weight: 800; color: #1e293b; line-height: 1; }
+  .divider { border: none; border-top: 1px solid #f1f5f9; margin: 12px 0; }
+  .info-row { display: flex; gap: 30px; }
   .info-block { flex: 1; }
-  .val-md { font-size: 14px; font-weight: 900; color: #1a202c; margin-top: 3px; }
+  .val-md { font-size: 13px; font-weight: 700; color: #334155; margin-top: 2px; }
 </style></head><body>
-<div class="header">
-  ${logo ? `<img src="${logo}" />` : ''}
-  ${hospName ? `<h1>${hospName}</h1>` : ''}
-  ${hospAddress ? `<p>${hospAddress}${hospPhone ? ' | ' + hospPhone : ''}</p>` : ''}
-</div>
+${hmsSettings?.opSlipPreprintedLetterhead ? 
+`<div style="height: ${hmsSettings?.opSlipHeaderHeight || '4.5'}cm;"></div>` : 
+`<div class="header">
+  <div class="header-left">
+      ${logo ? `<img src="${logo}" class="header-logo" />` : ''}
+      <div class="header-info">
+          ${hospName ? `<h1>${hospName}</h1>` : ''}
+          <p>${hospAddress || ''} ${hospPhone ? ' | ' + hospPhone : ''}</p>
+      </div>
+  </div>
+  <div class="header-right">
+      <p>OP VISIT SLIP</p>
+      <p style="margin-top:2px;">${date}</p>
+  </div>
+</div>`
+}
 <div class="slip">
   <div class="slip-row">
     <div>
-      <span class="lbl">Patient Name</span>
+      <span class="lbl">Patient Details</span>
       <div class="patient-name">${patientName}</div>
-      <div class="patient-meta">ID: ${appt.patient?.patient_number || 'N/A'} &nbsp;|&nbsp; ${appt.patient?.gender || ''}</div>
+      <div class="patient-meta">
+        ID: ${appt.patient?.patient_number || 'N/A'} &nbsp;|&nbsp; 
+        ${appt.patient?.gender || ''} &nbsp;|&nbsp; 
+        Age: ${appt.patient?.age || (appt.patient?.dob ? (new Date().getFullYear() - new Date(appt.patient.dob).getFullYear()) : 'N/A')}
+      </div>
     </div>
     <div class="token-box">
-      <span class="lbl">Token</span>
-      <div class="token-num">${tokenNumber}</div>
+      <span class="lbl">TOKEN NO</span>
+      <div class="token-num">#${tokenNumber}</div>
     </div>
   </div>
   <hr class="divider" />
   <div class="info-row">
     <div class="info-block">
-      <span class="lbl">Consulting Doctor</span>
+      <span class="lbl">Consulting Clinician</span>
       <div class="val-md">${doctorName}</div>
     </div>
-    <div class="info-block">
-      <span class="lbl">Date &amp; Time</span>
-      <div class="val-md">${date} &nbsp; ${time}</div>
+    <div class="info-block" style="text-align:right;">
+      <span class="lbl">Encounter Time</span>
+      <div class="val-md">${time}</div>
     </div>
   </div>
-</div>
+</div></div>
 </body></html>`);
                             }}
                             className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
@@ -670,9 +688,6 @@ export function AppointmentForm({
                         <button type="button" onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-all group">
                             <ArrowLeft className="h-6 w-6 text-white/70 group-hover:text-white" />
                         </button>
-                        <div className="bg-white rounded-lg p-1">
-                            <ZionaLogo size={32} variant="icon" theme="light" speed="slow" colorScheme="signature" />
-                        </div>
                     </div>
                     <div>
                         <h1 className="text-xl font-black tracking-tight italic uppercase flex items-center gap-2 text-white">
@@ -738,21 +753,21 @@ export function AppointmentForm({
                             <div className="flex items-center gap-8">
                                 <div className="h-10 w-[1px] bg-slate-200 dark:bg-white/10" />
                                 <div className="text-right">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">Reg Audit</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">Registration Status</div>
                                     <div className={`text-sm font-black tracking-tight ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : activeRegStatus.status === 'none' ? 'text-slate-300' : activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {activeRegStatus.status === 'loading' ? 'CHECKING...' : activeRegStatus.status === 'none' ? '---' : activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
+                                        {activeRegStatus.status === 'loading' ? 'AUDITING...' : activeRegStatus.status === 'none' ? 'UNLINKED' : activeRegStatus.shouldCharge ? 'EXPIRED / DUE' : 'LIFETIME VALID'}
                                     </div>
                                     {activeRegStatus.status !== 'none' && (
-                                        <div className="text-[9px] font-medium text-slate-400 leading-none mt-1">
-                                            {activeRegStatus.expiryDate ? `Expires: ${new Date(activeRegStatus.expiryDate).toLocaleDateString()}` :
-                                                activeRegStatus.status === 'expired' && (activeRegStatus as any).reason ? (activeRegStatus as any).reason : ''}
+                                        <div className="text-[9px] font-bold text-slate-400 leading-none mt-1 uppercase tracking-tighter">
+                                            {activeRegStatus.expiryDate ? `Ends: ${new Date(activeRegStatus.expiryDate).toLocaleDateString()}` :
+                                                activeRegStatus.status === 'expired' ? 'Action Required: Renew Fee' : 'Valid Protocol Active'}
                                         </div>
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 uppercase">Validity Expiry</div>
-                                    <div className={`text-xs font-bold ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : 'text-slate-500'}`}>
-                                        {activeRegStatus.status === 'loading' ? 'FETCHING...' : (activeRegStatus.expiryDate ? new Date(activeRegStatus.expiryDate).toLocaleDateString() : 'N/A (New Record)')}
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 uppercase">Audit Timestamp</div>
+                                    <div className={`text-xs font-bold ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : 'text-slate-500 font-mono italic'}`}>
+                                        {activeRegStatus.status === 'loading' ? 'SYNCING...' : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
                             </div>

@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
-import { ZionaLogo } from '@/components/branding/ziona-logo'
 import { format } from "date-fns"
 import { BatchSelectorDialog } from "./batch-selector-dialog"
 
@@ -681,7 +680,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         // WORLD CLASS: Auto-Print Trigger (Trigger on Paid or Posted settlement)
         if ((effectiveStatus === 'paid' || effectiveStatus === 'posted') && pdfConfig?.autoPrint && invoiceId) {
           // Trigger IMMEDIATELY to bypass popup blockers (most browsers allow window.open if it's "close enough" to the click)
-          window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = `/api/billing/${invoiceId}/pdf?autoPrint=true`;
+          document.body.appendChild(iframe);
+          setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
         }
 
         // [WORLD CLASS STABILITY] Delay the parent callback to allow success screen to mount first
@@ -991,7 +994,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 w-full mb-12">
               {/* PRINT RECEIPT */}
               <button
-                onClick={() => window.open(`/hms/billing/${lastSavedId}/print`, '_blank')}
+                onClick={() => {
+                  const iframe = document.createElement('iframe');
+                  iframe.style.display = 'none';
+                  iframe.src = `/api/billing/${lastSavedId}/pdf?autoPrint=true`;
+                  document.body.appendChild(iframe);
+                  setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
+                }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center"
               >
                 <div className="bg-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-600/20 group-hover:scale-110 transition-transform">
@@ -1129,9 +1138,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         {/* ... Rest of header content ... */}
         <div className="flex items-center justify-between px-6 py-2 border-b border-[#006666] bg-[#004d4d] z-20 no-print">
           <div className="flex items-center gap-4">
-            <div className="bg-[#002b2b] p-1.5 rounded border border-[#008080]">
-              <ZionaLogo size={20} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-            </div>
             <div>
               <h2 className="text-[12px] font-black text-[#ffffcc] tracking-tight truncate">FINANCIAL BILLING TERMINAL - Ziona HMS v4.5</h2>
               <div className="flex items-center gap-2 mt-0.5">
@@ -1317,6 +1323,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                             options={itemOptions.slice(0, 20)}
                             onChange={v => updateLine(line.id, 'product_id', v)}
                             disabled={isPaymentModalOpen || loading}
+                            variant="ghost"
+                            isDark={true}
                             onSearch={async q => {
                               const search = q.toLowerCase();
                               return itemOptions.filter(i =>

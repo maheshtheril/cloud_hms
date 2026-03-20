@@ -9,7 +9,6 @@ import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
 import { PatientIDCard } from "@/components/hms/patient-id-card"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 
 interface CreatePatientFormProps {
@@ -246,12 +245,8 @@ export function CreatePatientForm({
                 {/* Ultra-Modern Header */}
                 <div className="px-5 py-3 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 relative shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
-                            {appName?.includes('Ziona') ? (
-                                <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-                            ) : (
-                                <User className="h-6 w-6 text-white" />
-                            )}
+                        <div className="h-12 w-12 bg-slate-900 dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-lg border border-white/10 shrink-0">
+                            <User className="h-6 w-6 text-white" />
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">

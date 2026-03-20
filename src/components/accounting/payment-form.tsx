@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState } from "react"
@@ -19,12 +18,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon, Save, Printer, ArrowLeft } from "lucide-react"
+import { Calendar as CalendarIcon, Save, Printer, ArrowLeft, CreditCard } from "lucide-react"
 import { upsertPayment, PaymentType } from "@/app/actions/accounting/payments"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface PaymentFormProps {
     type: PaymentType;
@@ -98,8 +96,8 @@ export function PaymentForm({ type, initialData, partners }: PaymentFormProps) {
                         <ArrowLeft className="w-4 h-4 mr-1" /> Back to List
                     </Link>
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
-                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        <div className="h-12 w-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg border border-white/10 shrink-0">
+                            <CreditCard className="h-6 w-6 text-white" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
